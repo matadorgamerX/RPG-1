@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuar-Tor: A Última Expedição</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto+Slab:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto Slab', serif;
+            background-color: #0a0a0a; /* Preto profundo */
+            color: #d1d5db; /* Cinza claro */
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.05em;
+        }
+        .hero-bg {
+            background-image: url('https://images.unsplash.com/photo-1597873819455-90031846b6c3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .bg-overlay {
+            background-color: rgba(10, 10, 10, 0.85);
+        }
+        .text-shadow-scarlet {
+            text-shadow: 0 0 10px rgba(153, 27, 27, 0.7), 0 0 5px rgba(220, 38, 38, 0.5);
+        }
+        .border-scarlet {
+            border-color: #991b1b;
+        }
+        .bg-scarlet-glow {
+            background-color: #7f1d1d;
+            box-shadow: 0 0 15px rgba(153, 27, 27, 0.6);
+        }
+        .bg-scarlet-glow:hover {
+            background-color: #991b1b;
+        }
+        .card {
+            background-color: rgba(23, 23, 23, 0.6);
+            border: 1px solid #404040;
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: #ef4444;
+            transform: translateY(-5px);
+        }
+        .stat-block {
+            background-color: #171717;
+            border-left: 4px solid #991b1b;
+        }
+        /* Estilos para o mapa interativo */
+        .map-marker {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            padding: 0.5rem;
+            background-color: rgba(17, 17, 17, 0.7);
+            border-radius: 9999px;
+            cursor: pointer;
+        }
+        .map-marker .dot {
+            width: 1rem;
+            height: 1rem;
+            background-color: #ef4444;
+            border-radius: 9999px;
+            animation: pulse 2s infinite;
+            border: 2px solid #fecaca;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(0.95);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.1);
+            }
+        }
+        .map-marker .tooltip {
+            position: absolute;
+            bottom: 150%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            background-color: #171717;
+            color: #d1d5db;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #991b1b;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .map-marker:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+        .tooltip h5 {
+             font-family: 'Cinzel', serif;
+             color: #ef4444;
+             margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- HERO -->
+    <header class="hero-bg">
+        <div class="bg-overlay min-h-screen flex flex-col items-center justify-center text-center p-6">
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold text-white text-shadow-scarlet">Kuar-Tor</h1>
+            <h2 class="text-2xl md:text-3xl text-red-400 mt-2">A Última Expedição</h2>
+            <p class="text-lg md:text-xl text-gray-300 mt-8 max-w-3xl">
+                Há 127 anos, a ilha paradisíaca foi engolida pelo Vazio. Duas expedições falharam. Agora, párias e criminosos formam a última esperança de reconquistar Kuar-Tor. Você ousará se juntar a eles?
+            </p>
+            <a href="#visao-geral" class="mt-12 px-10 py-4 text-lg font-semibold text-white rounded-md bg-scarlet-glow transition-transform duration-300 hover:scale-105">Junte-se à Expedição</a>
+        </div>
+    </header>
+
+    <main class="bg-[#0a0a0a]">
+        
+        <!-- VISÃO GERAL -->
+        <section id="visao-geral" class="py-20 px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-4xl md:text-5xl text-red-500 mb-6">Visão Geral da Campanha</h2>
+                <div class="w-24 h-1 bg-red-700 mx-auto mb-10 rounded"></div>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    Kuar-Tor era um paraíso, mas um cataclismo criou uma fenda para o Vazio, uma dimensão de caos. A ilha foi desfigurada, seus habitantes dizimados, e agora está envolta em uma névoa sinistra e infestada por criaturas aberrantes. Duas expedições falharam, mas trouxeram informações valiosas. A sua, a terceira e última, é formada por párias, criminosos e desesperados — a última esperança de fechar a fenda e salvar Kuar-Tor.
+                </p>
+            </div>
+        </section>
+
+        <!-- SISTEMA DE JOGO -->
+        <section id="sistema" class="bg-[#121212] py-20 px-6">
+            <div class="max-w-5xl mx-auto">
+                <h2 class="text-4xl md:text-5xl text-center text-red-500 mb-12">O Sistema: +2d6 em Kuar-Tor</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-gray-300">
+                    <div class="card p-6">
+                        <h3 class="text-2xl text-white mb-4">Testes de Atributo</h3>
+                        <p class="mb-2"><strong class="text-red-400">Fórmula:</strong> 2d6 + Atributo</p>
+                        <p class="mb-2"><strong class="text-red-400">Sucesso:</strong> Resultado 9 ou mais.</p>
+                        <p>O Mestre pode aplicar modificadores (bônus ou penalidades) dependendo da situação.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-2xl text-white mb-4">Críticos</h3>
+                        <p class="mb-2"><strong class="text-red-400">Falha Crítica (2 nos dados):</strong> Algo terrível acontece. A falha tem uma consequência negativa adicional.</p>
+                        <p><strong class="text-red-400">Acerto Crítico (12 nos dados):</strong> Um sucesso excepcional! O personagem realiza a ação com perfeição e ganha um benefício extra.</p>
+                    </div>
+                </div>
+                <div class="mt-12">
+                     <h3 class="text-3xl text-center text-white mb-8">Os Seis Atributos</h3>
+                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                         <div class="p-4 text-center"><strong class="text-red-400 text-lg">Força (FOR):</strong> Poder muscular, dano corpo-a-corpo.</div>
+                         <div class="p-4 text-center"><strong class="text-red-400 text-lg">Destreza (DES):</strong> Agilidade, pontaria, furtividade.</div>
+                         <div class="p-4 text-center"><strong class="text-red-400 text-lg">Constituição (CON):</strong> Vigor, resistência, Pontos de Vida.</div>
+                         <div class="p-4 text-center"><strong class="text-red-400 text-lg">Inteligência (INT):</strong> Raciocínio, conhecimento, magia.</div>
+                         <div class="p-4 text-center"><strong class="text-red-400 text-lg">Sabedoria (SAB):</strong> Percepção, intuição, força de vontade.</div>
+                         <div class="p-4 text-center"><strong class="text-red-400 text-lg">Carisma (CAR):</strong> Liderança, persuasão, performance.</div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CRIAÇÃO DE PERSONAGEM -->
+        <section id="criacao" class="py-20 px-6">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-4xl md:text-5xl text-center text-red-500 mb-12">Criação de Personagem</h2>
+                
+                <!-- Famílias -->
+                <h3 class="text-3xl text-center text-white mb-8">Passo 1: Escolha sua Origem (Família)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    <div class="card p-6 text-center">
+                        <h4 class="text-2xl text-white">Descendentes dos Xang</h4>
+                        <p class="text-red-400 mb-2">Tecnólogos</p>
+                        <p>+1 em Inteligência. Perícia: Mecânica.</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <h4 class="text-2xl text-white">Descendentes dos Yang</h4>
+                        <p class="text-red-400 mb-2">Magos</p>
+                        <p>+1 em Sabedoria. Perícia: Arcana.</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <h4 class="text-2xl text-white">Descendentes dos Zahu</h4>
+                        <p class="text-red-400 mb-2">Guerreiros</p>
+                        <p>+1 em Força ou Constituição. Perícia: Atletismo.</p>
+                    </div>
+                </div>
+
+                <!-- Atributos & Classes -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div>
+                        <h3 class="text-3xl text-center text-white mb-8">Passo 2: Atributos e Detalhes</h3>
+                        <ul class="list-disc list-inside space-y-3 text-lg">
+                            <li><strong class="text-red-400">Distribua os valores:</strong> 2, 2, 1, 1, 0, 0 entre os 6 atributos.</li>
+                            <li>Some o bônus da sua Família.</li>
+                            <li><strong class="text-red-400">Pontos de Vida (PV):</strong> 10 + (Constituição x 2).</li>
+                            <li><strong class="text-red-400">Redução de Dano (RD):</strong> Valor da armadura (começa com 0 ou 1).</li>
+                            <li><strong class="text-red-400">Equipamento Inicial:</strong> Roupas, mochila com rações, uma arma simples, uma arma de classe e 10 moedas de prata.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-3xl text-center text-white mb-8">Passo 3: Escolha sua Classe</h3>
+                        <div class="space-y-4">
+                            <div class="card p-4"><strong class="text-white">Guerreiro:</strong> Mestre do combate. Atributo: FOR/DES.</div>
+                            <div class="card p-4"><strong class="text-white">Ladino:</strong> Especialista em furtividade e truques. Atributo: DES.</div>
+                            <div class="card p-4"><strong class="text-white">Mago:</strong> Conjurador de magias arcanas. Atributo: INT.</div>
+                            <div class="card p-4"><strong class="text-white">Clérigo:</strong> Devoto que usa poder divino. Atributo: SAB.</div>
+                            <div class="card p-4"><strong class="text-white">Explorador:</strong> Mestre da sobrevivência e da natureza. Atributo: DES/SAB.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- O MUNDO (MAPA INTERATIVO) -->
+        <section id="mundo" class="bg-[#121212] py-20 px-6">
+            <div class="max-w-7xl mx-auto">
+                <h2 class="text-4xl md:text-5xl text-center text-red-500 mb-12">Explore o Mundo de Kuar-Tor</h2>
+                <div class="relative w-full max-w-5xl mx-auto">
+                    <img src="Kuar-to.png" alt="Mapa de Kuar-Tor" class="w-full h-auto rounded-lg shadow-2xl border-2 border-gray-700">
+                    
+                    <!-- Marcadores do Mapa -->
+                    <div class="map-marker" style="top: 92%; left: 49%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Portirus</h5>O porto em ruínas e ponto de partida, coberto pela mortal névoa escarlate.</div>
+                    </div>
+                    <div class="map-marker" style="top: 73%; left: 56%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Casa da Família Xang</h5>O antigo lar dos mestres tecnólogos, agora em ruínas e silêncio.</div>
+                    </div>
+                    <div class="map-marker" style="top: 78%; left: 20%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Vento Glacial</h5>Picos gelados onde o vento corta como navalha, guardando segredos antigos.</div>
+                    </div>
+                    <div class="map-marker" style="top: 30%; left: 15%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Abismo dos Esquecidos</h5>Uma terra morta e cinzenta de onde ninguém jamais retornou.</div>
+                    </div>
+                    <div class="map-marker" style="top: 18%; left: 33%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Clã Zahu</h5>A fortaleza dos orgulhosos guerreiros Zahu, um dos últimos bastiões de ordem.</div>
+                    </div>
+                    <div class="map-marker" style="top: 45%; left: 37%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Furiansch</h5>Cidade-fortaleza devastada, palco de uma batalha sangrenta contra as criaturas do Vazio.</div>
+                    </div>
+                    <div class="map-marker" style="top: 13%; left: 51%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Árvore de Yang</h5>Local sagrado para os magos Yang, cuja magia ancestral ainda pulsa fracamente.</div>
+                    </div>
+                    <div class="map-marker" style="top: 50%; left: 53%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Árvore do Imperador</h5>O coração de Kuar-Tor, uma árvore colossal que pode ser a chave da salvação ou a fonte da ruína.</div>
+                    </div>
+                    <div class="map-marker" style="top: 24%; left: 74%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Casa Fregi</h5>Um assentamento isolado nas montanhas, habitado por sobreviventes desconfiados.</div>
+                    </div>
+                    <div class="map-marker" style="top: 35%; left: 88%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Iferno</h5>Terras áridas e vulcânicas, rachadas com o calor e a fúria do submundo.</div>
+                    </div>
+                    <div class="map-marker" style="top: 65%; left: 80%;">
+                        <div class="dot"></div>
+                        <div class="tooltip"><h5>Vento Ardente</h5>Uma cidade no deserto montanhoso, constantemente açoitada por ventos quentes e poeira.</div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- BESTIÁRIO -->
+        <section id="bestiario" class="py-20 px-6">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-4xl md:text-5xl text-center text-red-500 mb-12">Bestiário e Ameaças</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Devorador -->
+                    <div class="card flex flex-col md:flex-row items-center gap-6 p-6">
+                        <img src="https://placehold.co/150x150/111827/ef4444?text=Devorador" alt="Imagem do Devorador da Névoa" class="w-32 h-32 rounded-lg object-cover border-2 border-red-800">
+                        <div class="stat-block p-4 flex-1">
+                            <h3 class="text-2xl text-white">Devorador da Névoa</h3>
+                            <p class="text-red-400 mb-2">Nível 3 | PV: 16 | RD: 3</p>
+                            <p class="text-sm">Criatura grotesca que caça na névoa. Inimigos próximos sofrem dano contínuo (teste de CON para evitar).</p>
+                        </div>
+                    </div>
+                    <!-- Sentinela -->
+                    <div class="card flex flex-col md:flex-row items-center gap-6 p-6">
+                        <img src="https://placehold.co/150x150/111827/ef4444?text=Sentinela" alt="Imagem da Sentinela da Fenda" class="w-32 h-32 rounded-lg object-cover border-2 border-red-800">
+                        <div class="stat-block p-4 flex-1">
+                            <h3 class="text-2xl text-white">Sentinela da Fenda</h3>
+                            <p class="text-red-400 mb-2">Nível 4 | PV: 25 | RD: 5</p>
+                            <p class="text-sm">Guardião que emana energia do Vazio. Dispara raios necróticos e resiste a magias.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <!-- COMEÇANDO A AVENTURA -->
+    <footer id="aventura" class="bg-black py-20 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-4xl text-red-500 mb-6">A Aventura Começa</h2>
+            <div class="w-24 h-1 bg-red-700 mx-auto mb-10 rounded"></div>
+            <div class="text-lg text-left text-gray-300 space-y-4 border-l-4 border-scarlet pl-6 italic">
+                <p>A névoa escarlate se agarra ao casco do navio "Aventureiro Indomável", densa e com um cheiro metálico. Através do véu, vocês avistam a silhueta de Kuar-Tor: rochas negras e árvores retorcidas. O navio ancora no cais dilapidado de Portirus. O silêncio é perturbador.</p>
+                <p>A General Anya desembarca, sua armadura pesada ecoando na quietude. Ela se vira para vocês, seu rosto uma máscara de determinação.</p>
+                <p>"Bem-vindos a Kuar-Tor," ela diz, sua voz grave ressoando no porto fantasma. "O trabalho de vocês começa agora. Descubram o que aconteceu com a última equipe de reconhecimento e estabeleçam uma base segura. Não morram. Isso é uma ordem."</p>
+            </div>
+            <p class="text-gray-500 text-sm mt-16">&copy; 2024 Campanha de Kuar-Tor. Baseado no sistema +2d6.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
