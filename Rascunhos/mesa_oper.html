@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa de Operações - Kuar-Tor</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter e Roboto Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tone.js para áudio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
+    <!-- Estilos personalizados -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c0c0c;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+            color: #a1a1aa;
+        }
+        .font-roboto-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .scanlines::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(to bottom, rgba(18, 18, 18, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 5;
+            pointer-events: none;
+            animation: scanline-animation 10s linear infinite;
+        }
+        @keyframes scanline-animation {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 -200px; }
+        }
+        .glow-effect-red {
+            box-shadow: 0 0 8px rgba(220, 38, 38, 0.3), 0 0 12px rgba(220, 38, 38, 0.2);
+        }
+        .terminal-card {
+            background-color: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+        /* Estilos do Rolador de Dados */
+        .dice-container {
+            display: flex;
+            gap: 20px;
+            perspective: 1000px;
+        }
+        .dice {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .dice-face {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: rgba(20, 20, 20, 0.8);
+            border: 2px solid #dc2626;
+            color: #ef4444;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-shadow: 0 0 10px #ef4444;
+        }
+        .face-1 { transform: rotateY(0deg) translateZ(40px); }
+        .face-2 { transform: rotateY(90deg) translateZ(40px); }
+        .face-3 { transform: rotateY(180deg) translateZ(40px); }
+        .face-4 { transform: rotateY(-90deg) translateZ(40px); }
+        .face-5 { transform: rotateX(90deg) translateZ(40px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(40px); }
+
+        /* Estilos do Mapa de Combate */
+        #combat-map {
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            grid-template-rows: repeat(20, 1fr);
+            width: 100%;
+            height: 500px;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            background-color: rgba(0,0,0,0.2);
+            background-image: linear-gradient(rgba(220, 38, 38, 0.1) 1px, transparent 1px), linear-gradient(to right, rgba(220, 38, 38, 0.1) 1px, transparent 1px);
+            background-size: calc(100% / 20) calc(100% / 20);
+        }
+        .token {
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+            cursor: grab;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: white;
+            z-index: 10;
+        }
+        .token.player { background-color: #3b82f6; border: 2px solid #93c5fd; }
+        .token.enemy { background-color: #dc2626; border: 2px solid #fca5a5; }
+        .token:active { cursor: grabbing; }
+    </style>
+</head>
+<body class="min-h-screen p-4 scanlines">
+
+    <div class="w-full max-w-7xl mx-auto z-20 relative py-8">
+        <!-- Cabeçalho -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-red-600 font-roboto-mono tracking-wider">MESA DE OPERAÇÕES</h1>
+            <p class="text-lg text-gray-500">FERRAMENTAS DE CAMPO // SISTEMA +2D6</p>
+        </header>
+
+        <!-- Conteúdo Principal em Grid -->
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <!-- Coluna Esquerda: Rolador de Dados e Áudio -->
+            <div class="space-y-8">
+                <!-- Módulo 1: Rolador de Dados Temático -->
+                <section id="dice-roller" class="terminal-card rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">Oráculo do Vazio (2d6)</h2>
+                    <div class="flex flex-col items-center">
+                        <div class="dice-container mb-6">
+                            <div id="dice1" class="dice"><div class="dice-face face-1">1</div><div class="dice-face face-2">2</div><div class="dice-face face-3">3</div><div class="dice-face face-4">4</div><div class="dice-face face-5">5</div><div class="dice-face face-6">6</div></div>
+                            <div id="dice2" class="dice"><div class="dice-face face-1">1</div><div class="dice-face face-2">2</div><div class="dice-face face-3">3</div><div class="dice-face face-4">4</div><div class="dice-face face-5">5</div><div class="dice-face face-6">6</div></div>
+                        </div>
+                        <div id="roll-result" class="text-center mb-6 h-16">
+                            <p class="text-xl font-roboto-mono">Resultado: <span id="total-result" class="text-3xl font-bold text-white">0</span></p>
+                            <p id="formula-display" class="text-sm text-gray-400 h-4"></p>
+                        </div>
+                        <button id="roll-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg w-full mb-4 transition-colors">Rolar Dados</button>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
+                            <button class="test-btn bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md text-sm" data-formula="2d6 + DES + Armas Brancas">Ataque</button>
+                            <button class="test-btn bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md text-sm" data-formula="2d6 + SAB + Procurar">Percepção</button>
+                            <button class="test-btn bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md text-sm" data-formula="2d6 + CON">Resistência</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Módulo 2: Trilha Sonora e Efeitos -->
+                <section id="audio-console" class="terminal-card rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">Console de Áudio</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="font-semibold text-gray-300 mb-2">Trilhas Sonoras:</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <button class="audio-btn bg-gray-800 hover:bg-red-800 p-2 rounded" data-sound="tense">Exploração Tensa</button>
+                                <button class="audio-btn bg-gray-800 hover:bg-red-800 p-2 rounded" data-sound="combat">Combate Frenético</button>
+                                <button class="audio-btn bg-gray-800 hover:bg-red-800 p-2 rounded" data-sound="mystery">Mistério Arcano</button>
+                            </div>
+                             <button id="stop-music" class="w-full mt-2 bg-gray-600 hover:bg-gray-500 p-2 rounded">Parar Música</button>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-300 mb-2">Efeitos Sonoros:</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <button class="sfx-btn bg-gray-700 hover:bg-red-700 p-2 rounded" data-sfx="roar">Rugido</button>
+                                <button class="sfx-btn bg-gray-700 hover:bg-red-700 p-2 rounded" data-sfx="creak">Porta Rangendo</button>
+                                <button class="sfx-btn bg-gray-700 hover:bg-red-700 p-2 rounded" data-sfx="whispers">Sussurros</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Coluna Direita: Mapa de Combate -->
+            <section id="combat-module" class="terminal-card rounded-lg p-6">
+                <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">Mapa Tático</h2>
+                <div id="combat-map-container" class="w-full h-full">
+                    <div id="combat-map"></div>
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <button id="add-player" class="bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded text-sm">Add Jogador</button>
+                    <button id="add-enemy" class="bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded text-sm">Add Inimigo</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- LÓGICA DO ROLADOR DE DADOS ---
+            const dice1 = document.getElementById('dice1');
+            const dice2 = document.getElementById('dice2');
+            const totalResultEl = document.getElementById('total-result');
+            const formulaDisplayEl = document.getElementById('formula-display');
+            const rollButton = document.getElementById('roll-button');
+            const testButtons = document.querySelectorAll('.test-btn');
+
+            function rollDice(formula = '2d6') {
+                const d1 = Math.floor(Math.random() * 6) + 1;
+                const d2 = Math.floor(Math.random() * 6) + 1;
+                const total = d1 + d2;
+
+                // Animação dos dados
+                const rotations = {
+                    1: 'rotateY(0deg)', 2: 'rotateY(-90deg)', 3: 'rotateY(-180deg)',
+                    4: 'rotateY(90deg)', 5: 'rotateX(-90deg)', 6: 'rotateX(90deg)'
+                };
+                dice1.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg) rotateZ(${Math.random()*360}deg)`;
+                dice2.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg) rotateZ(${Math.random()*360}deg)`;
+
+                setTimeout(() => {
+                    dice1.style.transform = rotations[d1];
+                    dice2.style.transform = rotations[d2];
+                }, 100);
+
+                totalResultEl.textContent = total;
+                formulaDisplayEl.textContent = `(${d1} + ${d2}) | ${formula}`;
+            }
+
+            rollButton.addEventListener('click', () => rollDice());
+            testButtons.forEach(btn => {
+                btn.addEventListener('click', () => rollDice(btn.dataset.formula));
+            });
+
+            // --- LÓGICA DO CONSOLE DE ÁUDIO (Tone.js) ---
+            const audioBtns = document.querySelectorAll('.audio-btn');
+            const sfxBtns = document.querySelectorAll('.sfx-btn');
+            const stopMusicBtn = document.getElementById('stop-music');
+            let currentLoop = null;
+
+            const sounds = {
+                tense: () => {
+                    const loop = new Tone.Loop(time => {
+                        const synth = new Tone.FMSynth().toDestination();
+                        synth.triggerAttackRelease("C2", "4n", time);
+                        const noise = new Tone.Noise("pink").start(time).stop(time + 0.5);
+                        const filter = new Tone.AutoFilter("2n").toDestination().start();
+                        noise.connect(filter);
+                    }, "2n").start(0);
+                    return loop;
+                },
+                combat: () => {
+                    const loop = new Tone.Loop(time => {
+                        const synth = new Tone.MembraneSynth().toDestination();
+                        synth.triggerAttackRelease("C1", "8n", time);
+                    }, "4n").start(0);
+                    return loop;
+                },
+                mystery: () => {
+                    const loop = new Tone.Loop(time => {
+                        const synth = new Tone.AMSynth().toDestination();
+                        const notes = ["C4", "E4", "G4", "B4"];
+                        const note = notes[Math.floor(Math.random() * notes.length)];
+                        synth.triggerAttackRelease(note, "16n", time);
+                    }, "8n").start(0);
+                    return loop;
+                },
+                roar: () => {
+                    const noise = new Tone.Noise("brown").toDestination();
+                    const filter = new Tone.AutoFilter({
+                        frequency: "4n",
+                        baseFrequency: 200,
+                        octaves: 4
+                    }).toDestination();
+                    noise.connect(filter);
+                    noise.start();
+                    setTimeout(() => noise.stop(), 800);
+                },
+                creak: () => {
+                    const noise = new Tone.Noise("pink").toDestination();
+                    const filter = new Tone.Filter(800, "lowpass").toDestination();
+                    noise.connect(filter);
+                    noise.start();
+                    filter.frequency.rampTo(400, 1.5);
+                    setTimeout(() => noise.stop(), 1500);
+                },
+                whispers: () => {
+                    const noise = new Tone.Noise("white").toDestination();
+                    const filter = new Tone.AutoFilter({
+                        frequency: "2n",
+                        baseFrequency: 4000,
+                        octaves: 2
+                    }).toDestination();
+                    noise.connect(filter);
+                    noise.start();
+                    setTimeout(() => noise.stop(), 2000);
+                }
+            };
+            
+            const playSound = async (soundName, isLoop) => {
+                await Tone.start();
+                if (isLoop) {
+                    if (currentLoop) currentLoop.stop().dispose();
+                    currentLoop = sounds[soundName]();
+                    Tone.Transport.start();
+                } else {
+                    sounds[soundName]();
+                }
+            };
+
+            audioBtns.forEach(btn => btn.addEventListener('click', () => playSound(btn.dataset.sound, true)));
+            sfxBtns.forEach(btn => btn.addEventListener('click', () => playSound(btn.dataset.sfx, false)));
+            stopMusicBtn.addEventListener('click', () => {
+                if(currentLoop) {
+                    currentLoop.stop().dispose();
+                    Tone.Transport.stop();
+                    currentLoop = null;
+                }
+            });
+
+            // --- LÓGICA DO MAPA DE COMBATE ---
+            const combatMap = document.getElementById('combat-map');
+            let tokenCount = 0;
+
+            function makeDraggable(token) {
+                let isDragging = false;
+                token.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    token.style.zIndex = 1000;
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    const mapRect = combatMap.getBoundingClientRect();
+                    let x = e.clientX - mapRect.left;
+                    let y = e.clientY - mapRect.top;
+                    
+                    // Garante que o token fique dentro do mapa
+                    x = Math.max(0, Math.min(x, mapRect.width - token.offsetWidth));
+                    y = Math.max(0, Math.min(y, mapRect.height - token.offsetHeight));
+
+                    token.style.position = 'absolute';
+                    token.style.left = `${x}px`;
+                    token.style.top = `${y}px`;
+                });
+
+                document.addEventListener('mouseup', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        token.style.zIndex = 10;
+                    }
+                });
+            }
+
+            function addToken(type) {
+                tokenCount++;
+                const token = document.createElement('div');
+                token.classList.add('token', type);
+                token.textContent = type === 'player' ? `P${tokenCount}` : `E${tokenCount}`;
+                combatMap.appendChild(token);
+                makeDraggable(token);
+            }
+
+            document.getElementById('add-player').addEventListener('click', () => addToken('player'));
+            document.getElementById('add-enemy').addEventListener('click', () => addToken('enemy'));
+            
+            // Adiciona alguns tokens iniciais como exemplo
+            addToken('player');
+            addToken('enemy');
+        });
+    </script>
+
+</body>
+</html>

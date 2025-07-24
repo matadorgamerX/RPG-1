@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuar-Tor: Painel da Terceira Expedição</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Areias do Tempo -->
+    <!-- Application Structure Plan: Foi escolhida uma estrutura de aplicação de página única com navegação por abas para segmentar os diferentes tipos de conteúdo (lore, opções de personagem, regras e dados) em secções focadas e de fácil digestão. Esta abordagem evita sobrecarregar o utilizador com informação e permite o acesso direto ao que ele precisa. O fluxo do utilizador é centrado na exploração: a secção "Visão Geral" estabelece o cenário, o "Explorador de Vantagens" permite a personalização detalhada da personagem através de filtros e pesquisa, as "Regras" oferecem uma referência rápida e interativa, e o "Desempenho" fornece insights visuais sobre a campanha. Esta estrutura transforma documentos estáticos numa ferramenta de jogo dinâmica e útil. -->
+    <!-- Visualization & Content Choices: Informação do Relatório: Lore da campanha Kuar-Tor -> Objetivo: Informar/Imersão -> Método: Bloco de texto contextual e cartões de destaque -> Interação: Nenhuma, foco na leitura -> Justificação: Apresentar o cenário de forma clara e direta. | Informação: Lista de 300+ vantagens de RPG -> Objetivo: Organizar/Filtrar -> Método: Lista de cartões interativos -> Interação: Pesquisa por texto, filtros por categoria e custo -> Justificação: Facilitar a criação e evolução de personagens, permitindo que os jogadores encontrem rapidamente as opções desejadas -> Biblioteca: JavaScript puro. | Informação: Regras do sistema +2d6 -> Objetivo: Informar/Referência -> Método: Acordeão colapsável -> Interação: Clicar para expandir/recolher secções de regras -> Justificação: Oferecer uma consulta rápida e organizada das regras sem poluir a interface -> Biblioteca: JavaScript puro. | Informação: Dados de Desempenho (CSV) -> Objetivo: Comparar/Analisar -> Método: Gráficos de barras e de linhas -> Interação: Nenhuma na versão inicial, apresentação de dados agregados -> Justificação: Visualizar e comparar o progresso e as conquistas dos personagens na campanha de forma clara e apelativa -> Biblioteca: Chart.js/Canvas. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FDF6E3; }
+        .nav-button { transition: all 0.2s ease-in-out; }
+        .nav-button.active { background-color: #D35400; color: #FDF6E3; }
+        .nav-button:not(.active):hover { background-color: #E67E22; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .advantage-card { transition: all 0.2s ease-in-out; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+    </style>
+</head>
+<body class="text-stone-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#CB4335]">Campanha Kuar-Tor</h1>
+            <p class="text-lg text-stone-600 mt-2">Painel de Controlo da Terceira Expedição</p>
+        </header>
+
+        <nav class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+            <button id="nav-overview" class="nav-button active font-bold py-2 px-4 rounded-full bg-[#F39C12] text-white">Visão Geral</button>
+            <button id="nav-advantages" class="nav-button font-bold py-2 px-4 rounded-full bg-[#F39C12] text-white">Explorador de Vantagens</button>
+            <button id="nav-rules" class="nav-button font-bold py-2 px-4 rounded-full bg-[#F39C12] text-white">Regras Essenciais</button>
+            <button id="nav-performance" class="nav-button font-bold py-2 px-4 rounded-full bg-[#F39C12] text-white">Relatório de Desempenho</button>
+        </nav>
+
+        <main>
+            <!-- Visão Geral -->
+            <section id="section-overview" class="content-section active">
+                <div class="bg-white/50 rounded-lg p-6 shadow-md">
+                    <h2 class="text-3xl font-bold text-[#D35400] mb-4">Introdução à Missão</h2>
+                    <p class="text-lg leading-relaxed">
+                        Kuar-Tor era uma ilha próspera, considerada um paraíso no mundo mortal. Há 127 anos, um evento apocalíptico criou uma fenda entre a nossa dimensão e o vazio, desconfigurando a ilha e matando quase todos os seus habitantes. Após duas expedições falhadas que, no entanto, recolheram informações valiosas, uma terceira expedição está a caminho. Os seus recrutas são uma mistura improvável de desespero e coragem: criminosos em busca de redenção, heróis aposentados procurando um último ato de heroísmo e soldados sem pátria com um novo propósito. O sucesso desta missão pode significar não só o fecho da fenda, mas também um novo começo para todos os envolvidos.
+                    </p>
+                    <div class="grid md:grid-cols-3 gap-4 mt-6 text-center">
+                        <div class="bg-[#FDF6E3] p-4 rounded-lg shadow-sm">
+                            <h3 class="font-bold text-xl text-[#D35400]">O Cataclismo</h3>
+                            <p>Ocorreu há 127 anos, abrindo uma fenda para o Vazio.</p>
+                        </div>
+                        <div class="bg-[#FDF6E3] p-4 rounded-lg shadow-sm">
+                            <h3 class="font-bold text-xl text-[#D35400]">O Objetivo</h3>
+                            <p>Fechar a fenda dimensional e restaurar Kuar-Tor.</p>
+                        </div>
+                        <div class="bg-[#FDF6E3] p-4 rounded-lg shadow-sm">
+                            <h3 class="font-bold text-xl text-[#D35400]">Os Recrutas</h3>
+                            <p>Uma aliança de desajustados em busca de um propósito.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Explorador de Vantagens -->
+            <section id="section-advantages" class="content-section">
+                <div class="bg-white/50 rounded-lg p-6 shadow-md">
+                    <h2 class="text-3xl font-bold text-[#D35400] mb-4">Explorador de Vantagens</h2>
+                    <p class="mb-6">Utilize os filtros abaixo para encontrar a vantagem perfeita para a sua personagem. Com mais de 300 opções, as possibilidades são vastas. Combine-as para criar um herói ou anti-herói único para os desafios de Kuar-Tor.</p>
+                    <div class="flex flex-col md:flex-row gap-4 mb-6">
+                        <input type="text" id="advantage-search" placeholder="Pesquisar por nome ou descrição..." class="w-full p-2 border-2 border-stone-300 rounded-lg focus:outline-none focus:border-[#D35400]">
+                        <select id="advantage-category" class="w-full md:w-1/4 p-2 border-2 border-stone-300 rounded-lg bg-white focus:outline-none focus:border-[#D35400]">
+                            <option value="all">Todas as Categorias</option>
+                            <option value="Físicas">Físicas</option>
+                            <option value="Mentais">Mentais</option>
+                            <option value="Sociais">Sociais</option>
+                            <option value="Sobrenaturais / Exóticas">Sobrenaturais / Exóticas</option>
+                        </select>
+                        <select id="advantage-cost" class="w-full md:w-1/6 p-2 border-2 border-stone-300 rounded-lg bg-white focus:outline-none focus:border-[#D35400]">
+                            <option value="all">Todos os Custos</option>
+                            <option value="1">1 Ponto</option>
+                            <option value="2">2 Pontos</option>
+                            <option value="3">3 Pontos</option>
+                            <option value="4">4 Pontos</option>
+                            <option value="5">5 Pontos</option>
+                        </select>
+                    </div>
+                    <div id="advantages-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Vantagens serão inseridas aqui via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Regras Essenciais -->
+            <section id="section-rules" class="content-section">
+                <div class="bg-white/50 rounded-lg p-6 shadow-md">
+                    <h2 class="text-3xl font-bold text-[#D35400] mb-4">Regras Essenciais do Sistema +2d6</h2>
+                    <p class="mb-6">Esta é uma referência rápida das regras fundamentais. Para detalhes completos, consulte sempre o manual oficial. O sistema baseia-se em rolagens de 2d6 somados a um atributo ou perícia para superar uma Classe de Dificuldade (CD).</p>
+                    <div id="rules-accordion" class="space-y-2">
+                        <!-- Acordeão de regras será inserido aqui -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Relatório de Desempenho -->
+            <section id="section-performance" class="content-section">
+                <div class="bg-white/50 rounded-lg p-6 shadow-md">
+                    <h2 class="text-3xl font-bold text-[#D35400] mb-4">Relatório de Desempenho da Expedição</h2>
+                    <p class="mb-6">Análise do desempenho dos membros da expedição com base nos dados recolhidos. Os gráficos abaixo ilustram as contribuições individuais e o progresso da equipa em áreas-chave como combate, exploração e resolução de objetivos.</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-bold text-center mb-2">Inimigos Derrotados por Recruta</h3>
+                            <div class="chart-container">
+                                <canvas id="enemies-chart"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-center mb-2">Pontos de Experiência (XP) Ganhos</h3>
+                            <div class="chart-container">
+                                <canvas id="xp-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const advantagesData = `
+                ### Vantagens Físicas (FOR, DES, CON) (1-25)
+                 1. **Afinidade Atlética (DES ou FOR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem escolhe um grupo de atividades atléticas (ex: corridas, saltos, natação, escalada). Ele recebe +2 em todos os testes de perícias relacionadas a esse grupo.
+                 2. **Arremesso Poderoso (FOR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O alcance de todos os seus arremessos é dobrado. Além disso, adicione +2 ao dano de armas de arremesso.
+                 3. **Baluarte Imóvel (FOR)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Gastando 2 PEs, o personagem pode se firmar no chão, tornando-se extremamente difícil de mover. Ele ganha +8 em testes para resistir a ser empurrado, derrubado ou movido contra sua vontade por uma cena.
+                 4. **Calejado (CON)**
+                    * **Custo:** 1 a 3 pontos
+                    * **Descrição:** A pele do personagem é grossa e resistente. Ele ganha RD 1 por ponto gasto nesta vantagem contra dano de contusão e corte.
+                 5. **Carga de Adrenalina (CON)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Uma vez por sessão, o personagem pode ignorar todas as penalidades por ferimentos por 1d6 rodadas. Ao final do efeito, ele sofre 1d6 de dano não letal por exaustão.
+                 6. **Coordenação de Combate (DES)**
+                    * **Custo:** 4 pontos
+                    * **Descrição:** A penalidade por realizar ações múltiplas em combate é reduzida em 2. (ex: atacar com duas armas teria penalidade -4 e -6, em vez de -6 e -8).
+                 7. **Corrida de Parede (DES)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem pode correr por superfícies verticais por uma distância igual ao seu Deslocamento, desde que termine seu movimento em uma superfície horizontal. Requer um teste de Atletismo (CD 10).
+                 8. **Especialista em Arma (DES ou FOR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Escolha uma arma específica (ex: Espada Longa, Pistola 9mm). Você recebe +1 em todos os testes de ataque e dano com essa arma. Esta vantagem pode ser comprada várias vezes para armas diferentes.
+                 9. **Fôlego de Ferro (CON)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem pode prender a respiração por 10 vezes o tempo normal para sua CON.
+                10. **Golpe Atordoante (FOR)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Ao realizar um ataque desarmado ou com uma arma de contusão, você pode gastar 3 PEs antes de rolar o ataque. Se acertar, o alvo deve fazer um teste de CON (CD igual ao dano sofrido) ou ficará atordoado por 1 rodada, sem poder agir.
+                11. **Impacto Devastador (FOR)**
+                    * **Custo:** 4 pontos
+                    * **Descrição:** Seus ataques corpo a corpo ignoram 2 pontos da RD do alvo.
+                12. **Mão Firme (DES)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você ignora penalidades por movimento (estar em um veículo, correr) ao realizar ataques à distância.
+                13. **Metabolismo Acelerado (CON)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem recupera Pontos de Vida na metade do tempo normal. No entanto, precisa consumir o dobro de comida e água diariamente para evitar penalidades por fome e sede.
+                14. **Músculos Densos (FOR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem ganha +4 PVs e seu peso corporal é 50% maior, o que pode ser uma vantagem ou desvantagem.
+                15. **Percepção Tátil (DES)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Através do toque, o personagem pode sentir vibrações sutis, permitindo-lhe, por exemplo, abrir cofres pelo som dos cliques internos ou sentir a aproximação de inimigos através do chão. Recebe +3 em testes relevantes.
+                16. **Precisão Cirúrgica (DES)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** A penalidade para realizar um ataque localizado é reduzida em 2.
+                17. **Prontidão para Agir (DES)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem pode sacar uma arma e atacar na mesma ação sem penalidades.
+                18. **Reação Rápida (DES)**
+                    * **Custo:** 1 a 5 pontos
+                    * **Descrição:** O personagem recebe +1 no seu teste de Iniciativa para cada ponto gasto nesta vantagem.
+                19. **Regeneração Vigorosa (CON)**
+                    * **Custo:** 5 pontos
+                    * **Descrição:** O personagem recupera 1 PV por rodada, a menos que o dano seja de um tipo específico (fogo, ácido, etc., definido pelo Mestre). Membros perdidos podem ser regenerados em 1d6 dias.
+                20. **Resistência Ambiental (CON)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem é adaptado a um tipo de ambiente hostil (deserto, ártico, vácuo). Ele recebe +4 em todos os testes de CON para resistir aos efeitos negativos desse ambiente e pode sobreviver por mais tempo em condições extremas.
+                21. **Salto Potente (FOR)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** O personagem pode saltar 50% mais longe e mais alto que o normal.
+                22. **Saque Rápido (DES)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** O personagem pode sacar um item pequeno ou uma arma como uma ação livre.
+                23. **Sentidos Aguerridos (CON)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem é resistente a efeitos que visam sobrecarregar seus sentidos. Recebe +4 em testes para resistir a ser ofuscado, ensurdecido ou atordoado por ataques sensoriais.
+                24. **Tolerância à Fadiga (CON)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** O personagem pode se esforçar fisicamente por muito mais tempo. Ele só precisa fazer testes de cansaço na metade da frequência normal.
+                25. **Vitalidade Surpreendente (CON)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Ao fazer Testes de Morte, o personagem só morre após 4 falhas, em vez de 3, e se estabiliza com um resultado 11 ou 12 no 2d6.
+                ### Vantagens Mentais (INT, SAB) (26-50)
+                26. **Análise de Combate (INT)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Após observar um oponente por uma rodada, você pode fazer um teste de INT (CD 10). Se bem-sucedido, você descobre uma fraqueza tática, ganhando +2 em seus testes de ataque contra aquele alvo até o fim do combate.
+                27. **Aptidão Linguística (INT)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem aprende novos idiomas na metade do tempo e pode fazer um teste de INT (CD 12) para entender a essência de uma conversa mesmo sem conhecer a língua.
+                28. **Atenção aos Detalhes (SAB)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você recebe +3 em todos os testes de Procurar e Investigação para encontrar pistas sutis, objetos escondidos ou irregularidades.
+                29. **Cálculo de Probabilidades (INT)**
+                    * **Custo:** 4 pontos
+                    * **Descrição:** Gastando uma rodada e 2 PEs para analisar a situação, o personagem pode prever a ação mais provável de um alvo. O Mestre informa ao jogador qual a ação mais provável (atacar, fugir, usar uma habilidade específica).
+                30. **Conhecimento Enciclopédico (INT)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Escolha uma área de conhecimento muito específica (ex: "Heráldica do Reino de Pedra", "Demônios do Vazio", "Arquitetura Pré-Cataclismo"). Você é considerado um perito, tendo sucesso automático em quase todas as perguntas sobre o tema.
+                31. **Foco de Batalha (SAB)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** O personagem é imune a distrações e tentativas de intimidação em combate. Ele recebe +4 em testes de Vontade para resistir a medo em situações de combate.
+                32. **Gênio da Improvisação (INT)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Você pode usar objetos comuns de maneiras surpreendentes. Uma vez por sessão, você pode declarar que tem um item mundano consigo (uma corda, um clipe de papel, um isqueiro) e usá-lo para obter um bônus de +4 em um teste, se a aplicação for criativa.
+                33. **Intuição Estratégica (SAB)**
+                    * **Custo:** 4 pontos
+                    * **Descrição:** No início de um combate, antes da iniciativa, você pode fazer um teste de SAB (CD 12). Se passar, você pode trocar sua posição inicial com a de um aliado voluntário.
+                34. **Leitura Labial (SAB)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** Se puder ver claramente a boca de alguém, você pode entender o que está sendo dito com um teste de SAB (CD varia com a distância e visibilidade).
+                35. **Mestre da Lógica (INT)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você recebe +4 em testes para resolver enigmas, quebra-cabeças, decifrar códigos ou encontrar falhas em um argumento.
+                36. **Memória de Longo Prazo (INT)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** O personagem raramente esquece um fato que aprendeu, um rosto que viu ou um caminho que percorreu. Recebe +2 em testes para se lembrar de informações.
+                37. **Mente Organizada (INT)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** O personagem pode manter o foco em múltiplas tarefas mentais. Ele pode, por exemplo, decifrar um código enquanto mantém uma conversa, sofrendo uma penalidade reduzida (-2 em vez de -4) para a ação secundária.
+                38. **Mente Labiríntica (INT)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Sua mente é confusa e difícil de ler. Qualquer tentativa de ler seus pensamentos ou usar telepatia contra você sofre uma penalidade de -6.
+                39. **Percepção Aguçada (SAB)**
+                    * **Custo:** 1 a 5 pontos
+                    * **Descrição:** Você recebe +1 em todos os testes de percepção (Procurar, Sentir Motivação, Intuição) por ponto gasto nesta vantagem.
+                40. **Psicometria (SAB)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Ao tocar um objeto, você pode gastar 3 PEs e fazer um teste de SAB (CD 12) para ter visões sobre o passado do objeto, como seu último dono ou um evento significativo em que esteve presente.
+                41. **Raciocínio Rápido (INT)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você processa informações muito rapidamente. O tempo necessário para realizar tarefas de pesquisa, análise ou decifração é reduzido pela metade.
+                42. **Senso Climático (SAB)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** Você pode prever o clima com 24 horas de antecedência com grande precisão.
+                43. **Senso de Direção Urbano (SAB)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** O personagem nunca se perde em cidades ou ambientes construídos. Ele intuitivamente sabe encontrar distritos, ruas importantes ou o caminho mais rápido entre dois pontos.
+                44. **Técnico Habilidoso (INT)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você recebe +3 em todos os testes de perícias para consertar, construir ou operar máquinas (Mecânica, Eletrônica, Computação, etc.).
+                45. **Vontade Inabalável (SAB)**
+                    * **Custo:** 5 pontos
+                    * **Descrição:** Você é imune a controle mental, possessão e magias de medo de fontes não-divinas.
+                46. **Especialista em Terreno (INT)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Escolha um tipo de terreno (florestas, montanhas, pântanos, ruínas urbanas). Você recebe +3 em testes de Sobrevivência, Furtividade e Navegação nesse ambiente.
+                47. **Identificar Criatura (INT)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Ao encontrar uma criatura, você pode fazer um teste de INT (CD varia com a raridade da criatura). Se bem-sucedido, você se lembra de informações cruciais sobre ela, como resistências, vulnerabilidades ou táticas comuns.
+                48. **Mente Criptografada (INT)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você pensa em padrões complexos. Qualquer um que tente ler sua mente deve primeiro passar em um teste de Criptografia para entender seus pensamentos, mesmo que a telepatia funcione.
+                49. **Tática de Flanco (INT)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Quando você e um aliado estão a flanquear um inimigo, ambos recebem um bônus de +2 nos ataques, em vez do +1 habitual (ou o bônus definido pelo mestre).
+                50. **Visualização Tática (SAB)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Gastando 2 PEs, você pode fechar os olhos por uma rodada e visualizar o campo de batalha de uma perspetiva superior. Você toma conhecimento da posição de todos os combatentes, mesmo aqueles que estão escondidos.
+                ### Vantagens Sociais (CAR) (51-75)
+                51. **Alma da Festa (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** As pessoas se sentem naturalmente à vontade e felizes perto de você. Você recebe +3 em testes sociais para animar um ambiente, fazer amigos em uma taverna ou acalmar uma multidão hostil.
+                52. **Boa Fama (CAR)**
+                    * **Custo:** 1 a 3 pontos
+                    * **Descrição:** Você é conhecido por uma boa razão (um herói, um artista famoso, um artesão honesto). Por 1 ponto, sua fama é local. Por 2, regional. Por 3, conhecida em todo o reino/país. Isso concede um bônus de +2 por nível de fama em interações sociais com quem conhece sua reputação.
+                53. **Charme Animal (CAR)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** Versão menor de Empatia com Animais. Animais domésticos e de fazenda gostam de você e são fáceis de lidar.
+                54. **Confiança Inspiradora (CAR)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Seus aliados confiam em seu julgamento. Você recebe +4 em testes para convencê-los a seguir um plano arriscado ou para acalmá-los em uma situação de pânico.
+                55. **Contato Influente (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você conhece alguém importante (um nobre, um chefe de guilda, um oficial de alta patente) que pode lhe dever um favor. Uma vez por aventura, você pode chamar esse contato para obter uma ajuda significativa.
+                56. **Discernimento Social (CAR)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Você tem uma incrível capacidade de "ler" um ambiente social. Com um teste de CAR (CD 10), você pode identificar rapidamente as figuras de poder, as relações tensas e as dinâmicas ocultas em um grupo.
+                57. **Etiqueta (CAR)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** Você conhece as regras de comportamento da alta sociedade ou de uma cultura específica. Você ganha +2 em testes sociais nessas situações e evita gafes culturais.
+                58. **Fisionomista (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você tem uma memória excelente para rostos e nomes. Além disso, você pode fazer um teste de CAR+Sentir Motivação para ter uma impressão inicial precisa sobre o caráter de alguém apenas olhando para essa pessoa.
+                59. **Inofensivo (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você tem uma aparência tão comum, inofensiva ou patética que a maioria dos inimigos irá ignorá-lo em combate, a menos que você os ataque diretamente.
+                60. **Lábia (CAR)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Você é um mestre em inventar histórias na hora. Recebe +4 em testes de Mentir ou Manipulação quando precisa improvisar uma desculpa ou uma história elaborada.
+                61. **Líder Nato (CAR)**
+                    * **Custo:** 5 pontos
+                    * **Descrição:** Seus aliados em alcance de sua voz recebem +1 em seus testes de Vontade para resistir ao medo. Além disso, uma vez por combate, você pode gastar sua ação para dar um comando a um aliado, que recebe +2 em seu próximo teste.
+                62. **Mentor (CAR)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** Você tem um mentor que pode lhe oferecer conselhos, treinamento ou recursos ocasionais.
+                63. **Ouvido na Rua (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você sabe como extrair informações e rumores do submundo ou de pessoas comuns. O tempo para obter informações através de Manha ou Contatos é reduzido pela metade.
+                64. **Presença Confortante (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Sua presença calma e serena ajuda os outros. Você pode conceder a um aliado um bônus de +2 em um teste para resistir a medo ou pânico, ou em um teste de Primeiros Socorros para estabilizar alguém.
+                65. **Rosto Confiável (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** As pessoas tendem a confiar em você instintivamente. Você recebe +3 em testes sociais para convencer alguém de sua sinceridade.
+                66. **Barganha de Mercador (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você tem talento para negócios. Sempre consegue 20% de desconto em compras e vende itens por 20% a mais do seu valor.
+                67. **Diplomata de Crise (CAR)**
+                    * **Custo:** 4 pontos
+                    * **Descrição:** Você pode tentar mediar um conflito que está prestes a explodir. Com um teste de Diplomacia (CD 14), você pode adiar o início de um combate por 1d6 rodadas, dando tempo para negociações.
+                68. **Identidade de Grupo (CAR)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** Você pertence a uma organização reconhecida (uma guilda, uma ordem de cavaleiros, uma facção de Kuar-Tor). Isso pode conceder acesso a recursos ou causar problemas, dependendo da reputação do grupo.
+                69. **Intriga de Corte (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você é adepto dos jogos de poder e manipulação social. Recebe +3 em testes para espalhar rumores, descobrir segredos ou manipular nobres.
+                70. **Oratória Inspiradora (CAR)**
+                    * **Custo:** 4 pontos
+                    * **Descrição:** Gastando 5 PEs e um minuto a discursar, você pode conceder a todos os aliados que o ouvem um bônus de +2 em todos os testes por 10 minutos.
+                71. **Povo da Terra (CAR)**
+                    * **Custo:** 2 pontos
+                    * **Descrição:** Você tem uma forte ligação com o povo comum. Eles tendem a confiar em você e a compartilhar informações que não dariam a forasteiros ou nobres. Bônus de +3 em interações sociais com camponeses, trabalhadores e aldeões.
+                72. **Reputação Temível (CAR)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Sua reputação (ou a de seu grupo) inspira medo. Você pode usar Intimidação no lugar de outras perícias sociais em certas situações, e oponentes com ND inferior ao seu nível podem precisar de um teste de Vontade para atacá-lo.
+                73. **Segredo Compartilhado (CAR)**
+                    * **Custo:** 1 ponto
+                    * **Descrição:** Você e outro personagem (de jogador ou NPC) compartilham um segredo profundo. Esse vínculo lhes dá um bônus de +2 em testes para ajudar um ao outro.
+                74. **Voz da Autoridade (CAR)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Sua voz e postura comandam respeito. Você recebe +4 em testes para dar ordens a subordinados ou para se passar por alguém com autoridade (um guarda, um oficial, etc.).
+                75. **Zombaria Desmoralizante (CAR)**
+                    * **Custo:** 3 pontos
+                    * **Descrição:** Você pode usar sua ação para fazer um teste oposto de Manha vs. Vontade de um alvo. Se vencer, o alvo sofre -2 em todos os seus testes na próxima rodada devido à raiva e humilhação.
+                ### Vantagens Sobrenaturais / Exóticas (POD ou Especial) (76-300)
+                 76. **Absorção Energética (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Escolha um tipo de energia (fogo, eletricidade, frio). Quando você sofre dano desse tipo, pode fazer um teste de POD (CD 12). Se passar, você não sofre o dano e, em vez disso, recupera uma quantidade de PEs igual à metade do dano que teria sofrido.
+                 77. **Afinidade com o Vazio (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição (Tema Kuar-Tor):** Você tem uma estranha conexão com a fenda dimensional. Você recebe +4 em testes para resistir aos efeitos ambientais da ilha e pode sentir a presença de criaturas do Vazio a até 100 metros com um teste de POD (CD 10).
+                 78. **Alterar Probabilidade (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Uma vez por sessão, você pode forçar um alvo (você, um aliado ou um inimigo) a rolar novamente qualquer teste de dados que acabou de fazer. Você deve aceitar o segundo resultado.
+                 79. **Âncora da Realidade (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você é um ponto de estabilidade no universo. Efeitos de teleporte, viagem dimensional ou alteração da realidade que afetem uma área onde você está têm sua dificuldade aumentada em +6. Criaturas incorpóreas ou de outras dimensões sofrem -2 em seus ataques contra você.
+                 80. **Arma Espiritual (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 2 PEs, você pode manifestar uma arma feita de pura energia espiritual por uma cena. A arma tem as mesmas estatísticas de uma arma comum de sua escolha, mas usa POD no lugar de FOR ou DES para o ataque e causa dano mágico.
+                 81. **Comunicação com os Mortos (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode falar com os espíritos dos mortos. Requer um teste de POD (CD varia com a relutância e poder do espírito) e geralmente só funciona em locais de morte ou perto do cadáver.
+                 82. **Controle Climático Menor (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 5 PEs e 10 minutos de concentração, você pode alterar o clima em uma área de 1km. Pode criar uma chuva leve, neblina, dissipar nuvens ou aumentar/diminuir a temperatura em 10 graus. O efeito dura 1 hora.
+                 83. **Criação de Homúnculo (INT/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Através de alquimia ou magia, você pode criar um pequeno servo artificial. O homúnculo tem 15 pontos de Atributos, 10 de Perícias e a vantagem Familiar. Criar um novo leva uma semana e materiais caros.
+                 84. **Drenar Vitalidade (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 4 PEs, você pode fazer um ataque de toque. Se acertar, o alvo sofre 3d6 de dano e você recupera uma quantidade de PVs igual ao dano causado.
+                 85. **Eco do Vazio (POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição (Tema Kuar-Tor):** Você pode, ocasionalmente, ouvir ecos ou ver imagens de Kuar-Tor antes do cataclismo. Uma vez por sessão, pode perguntar ao Mestre sobre a aparência ou função original de um local em ruínas.
+                 86. **Escudo Psíquico (INT/POD)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Você tem uma defesa mental passiva. Recebe RD +2 contra ataques que causam dano mental ou à Sanidade por ponto gasto nesta vantagem.
+                 87. **Forma de Sombra (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 3 PEs, você pode se transformar em uma sombra bidimensional por até 10 minutos. Nesta forma, você pode deslizar por frestas, é difícil de ver em pouca luz (+6 em Furtividade) e só pode ser ferido por magia ou luz solar (que causa dano dobrado).
+                 88. **Leitor de Auras (SAB/POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Gastando 1 PE, você pode ver a aura de uma criatura, permitindo um teste de SAB para determinar seu estado emocional geral (raiva, medo, calma) e se ela é uma criatura sobrenatural.
+                 89. **Ligação com Aliado (CAR/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Escolha um aliado voluntário. Vocês dois podem se comunicar telepaticamente a até 1km de distância e sempre sabem a direção e o estado geral (bem, ferido, inconsciente) um do outro.
+                 90. **Mimetismo (Especial)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Você pode replicar uma Vantagem ou Perícia de um alvo que você observa por um minuto. Requer um teste de INT (CD 12). Você mantém a habilidade copiada por 10 minutos. Você só pode copiar habilidades de custo igual ou inferior ao seu atributo POD.
+                 91. **Passo Dimensional (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 3 PEs, você pode se teleportar instantaneamente para qualquer local que possa ver a até 50 metros de distância.
+                 92. **Pirocinese (POD)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Variação de Poderes de Fogo. Causa 1d6 de dano por ponto gasto, ao custo de 1 PE por dado de dano. Alcance de 10m por ponto.
+                 93. **Possessão (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 5 PEs, você pode tentar possuir o corpo de um alvo. Requer um teste oposto de POD vs. Vontade do alvo. Se vencer, você controla o corpo do alvo por 1 minuto por ponto de diferença no teste. Seu corpo fica em coma durante a possessão.
+                 94. **Precognição (SAB/POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Você tem vislumbres do futuro imediato. Você recebe +4 em todos os testes de defesa e nunca pode ser surpreendido.
+                 95. **Sentir Vida (POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Gastando 1 PE, você pode sentir a localização de todas as criaturas vivas (não-constructos, não-mortos-vivos) em um raio de 30 metros por 1 minuto, mesmo através de paredes.
+                 96. **Sobrevivente do Cataclismo (CON/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição (Tema Kuar-Tor):** Você esteve em Kuar-Tor durante o evento apocalíptico e sobreviveu. Você é imune a medo causado por criaturas do Vazio de ND inferior a 5 e começa o jogo com +1d6 de Sanidade (se a regra for usada).
+                 97. **Telecinese (POD)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Você pode mover objetos com a mente. Por 1 ponto, pode mover objetos de até 10kg. O peso dobra a cada ponto adicional (20kg, 40kg, 80kg, 160kg). Usar a telecinese para atacar causa dano baseado na FOR equivalente à capacidade de peso (ex: 160kg seria como FOR 4, dano 1d6+1).
+                 98. **Toque Corrosivo (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 2 PEs, seu toque corrói matéria inorgânica. Contra objetos, destrói RD 10 por rodada. Contra um oponente com armadura, causa 2d6 de dano diretamente na armadura, ignorando o alvo.
+                 99. **Um com a Multidão (CAR/POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Em qualquer grupo de 10 ou mais pessoas, você se torna virtualmente invisível. As pessoas simplesmente não notam sua presença a menos que você interaja diretamente com elas. Concede +6 em testes para seguir alguém ou se esconder em uma multidão.
+                100. **Viagem Astral (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 5 PEs, você pode projetar sua consciência para fora do corpo. Sua forma astral é invisível, pode voar e atravessar objetos sólidos. Ela não pode interagir fisicamente com o mundo, mas pode usar vantagens mentais ou de percepção. Seu corpo fica vulnerável durante a viagem.
+                101. **Vínculo com a Natureza (SAB/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Em ambientes selvagens, você pode gastar 2 PEs para fazer uma pergunta simples à natureza local ("Onde há água potável?", "Humanos passaram por aqui recentemente?"). A resposta vem de forma intuitiva.
+                102. **Voz do Comando (CAR/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 3 PEs, você pode dar um comando de uma única palavra a um alvo (ex: "Durma!", "Solte!", "Fuja!"). O alvo deve fazer um teste de Vontade vs. seu CAR+POD. Se falhar, ele obedece ao comando em seu próximo turno.
+                103. **Xenoglosia (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 2 PEs, você pode tocar uma criatura e instantaneamente falar e entender sua língua por 1 hora. Funciona mesmo com criaturas que não possuem uma linguagem verbal tradicional.
+                104. **Caminhar nas Sombras (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode entrar em uma sombra e sair em outra a até 30 metros de distância. Requer um gasto de 3 PEs e que ambas as sombras sejam grandes o suficiente para cobri-lo.
+                105. **Sorte de Ladrão (CAR)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Uma vez por sessão, você pode declarar que um evento de pura sorte acontece a seu favor (ex: um guarda convenientemente adormece, a chave está debaixo do tapete, o alarme falha). O Mestre tem a palavra final sobre a plausibilidade.
+                106. **Afinidade com Constructos (INT)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você tem uma compreensão intuitiva de constructos (golems, robôs, etc.). Você recebe +3 em testes para consertá-los, entendê-los ou encontrar seus pontos fracos.
+                107. **Campo de Silêncio (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 3 PEs, você cria uma esfera de 5 metros de raio centrada em você onde nenhum som pode ser criado ou passar. O efeito dura 1 minuto.
+                108. **Olhos da Verdade (SAB/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 4 PEs, por um minuto, você pode ver através de todas as ilusões, invisibilidade e transformações mágicas em seu campo de visão.
+                109. **Pacto com Entidade (Especial)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Você fez um pacto com uma entidade poderosa (demônio, fada, deus antigo). Você ganha acesso a uma Vantagem de custo igual aos pontos gastos aqui, mas em troca, deve cumprir certas obrigações ou seguir um código de conduta para não irritar seu patrono.
+                110. **Resistência à Corrupção (CON/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição (Tema Kuar-Tor):** A influência do Vazio tem menos efeito sobre você. Você recebe +4 em testes para resistir a mutações, insanidade ou corrupção mágica proveniente da fenda.
+                111. **Sangue Ácido (CON)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Sempre que você sofrer dano de corte ou perfuração em combate corpo a corpo, seu atacante sofre 1d6 de dano de ácido.
+                112. **Sentir o Norte (SAB)**
+                     * **Custo:** 1 ponto
+                     * **Descrição:** Uma versão mais simples de Direção Absoluta. Você sempre sabe para onde fica o norte magnético.
+                113. **Sonhos Proféticos (SAB/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Ocasionalmente, você tem sonhos que preveem o futuro ou revelam informações importantes. O Mestre controla quando e o que você sonha, geralmente antes de eventos cruciais.
+                114. **Transferência de Ferimentos (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 5 PEs e tocando um alvo voluntário, você pode transferir qualquer quantidade de seus PVs perdidos para ele. O alvo sofre o dano e você é curado na mesma quantidade.
+                115. **Vibração Molecular (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 4 PEs, você pode fazer seus membros vibrarem em alta frequência por 1 minuto. Enquanto isso, seus ataques desarmados ignoram completamente a RD de armaduras não-mágicas e você pode atravessar lentamente (1 metro por rodada) barreiras sólidas de até 30 cm de espessura.
+                116. **Carne Instável (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição (Tema Kuar-Tor):** Sua carne foi tocada pelo Vazio. Gastando 2 PEs, você pode contorcer seu corpo de forma não natural, ganhando a vantagem Flexibilidade por uma cena ou escapando de amarras com um bônus de +6. O uso excessivo pode levar a mutações indesejadas (a critério do Mestre).
+                117. **Sussurros do Além (SAB/POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição (Tema Kuar-Tor):** Você ouve os sussurros do Vazio. Uma vez por sessão, pode fazer um teste de SAB (CD 12) para receber uma informação enigmática, mas útil, sobre a situação atual. Falhar no teste pode impor uma Desvantagem mental temporária (como Paranoia).
+                118. **Catador Experiente (INT)**
+                     * **Custo:** 2 pontos
+                     * **Descrição (Tema Kuar-Tor):** Você sabe onde procurar em ruínas e destroços. Você dobra a quantidade de recursos ou itens úteis encontrados ao vasculhar uma área.
+                119. **Filtrar Corrupção (CON)**
+                     * **Custo:** 3 pontos
+                     * **Descrição (Tema Kuar-Tor):** Seu corpo aprendeu a filtrar as energias nocivas de Kuar-Tor. Você pode consumir comida e água levemente contaminadas sem sofrer penalidades, com um teste bem-sucedido de CON (CD 10).
+                120. **Sintonia com Artefato (INT/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição (Tema Kuar-Tor):** Você tem uma afinidade natural com a tecnologia pré-cataclismo. Você recebe +4 em testes para entender, ativar ou consertar artefatos antigos encontrados na ilha.
+                121. **Reativar Glifo (INT)**
+                     * **Custo:** 4 pontos
+                     * **Descrição (Tema Kuar-Tor):** Você aprendeu a reativar os antigos glifos de proteção de Kuar-Tor. Gastando 5 PEs e 10 minutos, pode reativar um glifo encontrado, criando uma pequena zona segura (10m de raio) que repele criaturas do Vazio de ND baixo (3 ou menos) por uma hora.
+                122. **Criocinese (POD)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Variação de Poderes de Água. Causa 1d6 de dano de frio por ponto gasto, ao custo de 1 PE por dado de dano. Alvos que sofrem dano têm seu deslocamento reduzido pela metade na próxima rodada.
+                123. **Geocinese (POD)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Variação de Poderes de Terra. Causa 1d6 de dano de contusão por ponto gasto. Pode também ser usada para criar barreiras de pedra com RD 3 por ponto gasto.
+                124. **Eletrocinese (POD)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Variação de Raio Elétrico. Causa 1d6 de dano elétrico por ponto gasto. Pode ser usada para sobrecarregar aparelhos eletrónicos.
+                125. **Fotocinese (POD)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Variação de Poderes da Luz. Por 1 PE por ponto, pode criar um clarão que força todos que olham a fazer um teste de CON ou ficarem cegos por 1 rodada por ponto gasto.
+                126. **Umbramancia (POD)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Variação de Poderes das Trevas. Por 1 PE por ponto, pode criar uma área de escuridão mágica com 2m de raio por ponto gasto.
+                127. **Anular Magia (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando PEs iguais ao custo da magia alvo, você pode tentar anular uma magia sendo conjurada. Requer um teste oposto de POD+Magia contra o conjurador.
+                128. **Arma Viva (Especial)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Parte do seu corpo é uma arma natural ou biotecnológica (lâminas ósseas, canhão de plasma orgânico). A arma causa 3d6 de dano e está sempre com você.
+                129. **Duplicar Objeto (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 5 PEs, você pode criar uma cópia perfeita, mas não-mágica, de um objeto inanimado de até 1kg. A cópia dura 1 hora.
+                130. **Empatia Tecnológica (INT/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode "conversar" com máquinas. Gastando 2 PEs, pode fazer um teste de INT para obter informações de um sistema computacional ou entender a função de um dispositivo complexo.
+                131. **Familiar Aprimorado (Especial)**
+                     * **Custo:** 4 pontos
+                     * **Pré-requisito:** Familiares
+                     * **Descrição:** Seu familiar é mais poderoso. Ele ganha +10 pontos para distribuir em seus Atributos e +10 em Perícias.
+                132. **Invocação Rápida (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** O tempo para conjurar magias de invocação (Invocar Criaturas, etc.) é reduzido em uma rodada.
+                133. **Marca do Caçador (SAB)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Gastando 2 PEs, você pode marcar um alvo. Por 1 hora, você sempre sabe a direção e a distância aproximada dele, e recebe +2 em testes para Rastreá-lo.
+                134. **Metamorfose Menor (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 2 PEs, você pode se transformar em um animal pequeno (gato, rato, corvo) por 10 minutos. Você mantém seus atributos mentais, mas adquire os atributos físicos do animal.
+                135. **Nulificar Veneno (POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Gastando 2 PEs e tocando uma criatura, você pode anular instantaneamente o efeito de qualquer veneno não-mágico.
+                136. **Onda de Choque (FOR/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Batendo palmas ou golpeando o chão, você gasta 3 PEs para criar uma onda de choque. Todos em um cone de 5 metros devem fazer um teste de FOR (CD 12) ou serem derrubados.
+                137. **Pele Deslizante (CON)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Sua pele secreta uma substância escorregadia. Você ganha +4 em testes para escapar de agarrões ou amarras.
+                138. **Portal de Bolso (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Você tem acesso a um pequeno espaço extradimensional onde pode guardar até 100kg de equipamento. Recuperar um item é uma ação normal.
+                139. **Rajada de Energia Pura (POD)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Você dispara energia não-elemental. Causa 1d6+1 de dano por ponto gasto, ao custo de 1 PE por ponto. Este dano é raramente resistido.
+                140. **Reflexão de Projéteis (DES/POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Uma vez por rodada, ao ser alvo de um ataque de projétil normal (não-mágico), você pode gastar 3 PEs para tentar apará-lo e refleti-lo. Faça um teste oposto de Armas Brancas vs. o ataque do inimigo. Se vencer, o projétil volta contra o atacante original, usando o resultado do seu teste como o novo ataque.
+                141. **Salto Vetorial (DES/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Ao saltar, você pode gastar 2 PEs para mudar de direção no ar, como se desse um "salto duplo".
+                142. **Sifão de Energia (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Ao tocar um item mágico ou criatura com PEs, você pode tentar drenar sua energia. Faça um teste oposto de POD vs. POD do alvo. Se vencer, você drena 1d6 PEs do alvo para si mesmo.
+                143. **Somaturgia (INT/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode manipular a carne. Gastando 3 PEs e tocando um alvo voluntário, pode curar 2d6 PVs. Usado ofensivamente, pode fazer um ataque de toque que causa 2d6 de dano e impõe uma penalidade de -2 na CON do alvo por uma cena.
+                144. **Telepatia (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode comunicar-se mentalmente com qualquer criatura que tenha uma linguagem, a até 30 metros.
+                145. **Terceiro Olho (SAB/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você possui um terceiro olho (físico ou místico). Gastando 2 PEs, você pode abri-lo por uma cena para ganhar a vantagem Olhos da Verdade.
+                146. **Toque Congelante (POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Seu toque é gélido. Causa 1d6 de dano de frio e, se o alvo falhar em um teste de CON, fica com o movimento reduzido pela metade por uma rodada.
+                147. **Transmutar Material (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 5 PEs e se concentrando por um minuto, você pode transformar um metro cúbico de um material comum (madeira, pedra) em outro (ferro, vidro). O efeito é permanente.
+                148. **Visão no Escuro Aprimorada (SAB)**
+                     * **Custo:** 2 pontos
+                     * **Pré-requisito:** Visão Noturna
+                     * **Descrição:** Você enxerga perfeitamente na escuridão total, como se fosse dia.
+                149. **Voo Aprimorado (POD)**
+                     * **Custo:** +2 pontos
+                     * **Pré-requisito:** Voo
+                     * **Descrição:** Aumenta sua velocidade de voo em 50% e concede +2 em testes de manobra enquanto voa.
+                150. **Aura de Pavor (CAR/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 3 PEs, você projeta uma aura de medo num raio de 10 metros por uma cena. Inimigos que entram na área devem passar num teste de Vontade (CD 12) ou sofrerão -2 em todos os seus testes enquanto permanecerem nela.
+                151. **Bateria Energética (CON/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode armazenar energia para seus poderes. Seus Pontos de Energia máximos aumentam em 10.
+                152. **Caminhar na Água (POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Gastando 1 PE, você pode andar sobre a superfície de líquidos como se fossem solo firme por 10 minutos.
+                153. **Corpo Elástico (CON)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você pode esticar seus membros até o dobro do seu comprimento normal. Isso lhe dá um alcance maior em ataques corpo a corpo e +4 em testes para agarrar ou alcançar objetos distantes.
+                154. **Dedo da Morte (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Uma vez por dia, gastando 10 PEs, você pode apontar para uma criatura e fazer um teste oposto de POD vs. CON. Se você vencer, o alvo morre instantaneamente. Se perder, o alvo sofre 5d6 de dano. Este poder não afeta constructos ou mortos-vivos.
+                155. **Escrita Automática (SAB/POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você pode entrar em transe e permitir que uma força externa (um espírito, o inconsciente coletivo) escreva através de você. O resultado é geralmente uma pista enigmática sobre um problema atual.
+                156. **Forma de Besta (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 4 PEs, você pode se transformar em um animal predador de grande porte (urso, tigre, lobo gigante) por uma cena. Você ganha os atributos físicos da besta, suas armas naturais e habilidades especiais (como faro aguçado).
+                157. **Gravitocinese (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Você pode manipular a gravidade. Gastando PEs, pode aumentar o peso de um alvo (reduzindo seu movimento), diminuí-lo (permitindo saltos maiores), ou criar um pulso de força que empurra tudo para longe de você.
+                158. **Imunidade Elemental (CON/POD)**
+                     * **Custo:** 5 pontos
+                     * **Pré-requisito:** Absorção Energética
+                     * **Descrição:** Escolha o mesmo tipo de energia da sua Absorção Energética. Você agora é completamente imune a esse tipo de dano.
+                159. **Injetar Conhecimento (INT/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 5 PEs e tocando um alvo, você pode conceder-lhe temporariamente o seu nível numa Perícia que você possua. O efeito dura 10 minutos.
+                160. **Ler Objetos (SAB/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Similar a Psicometria, mas focado em função. Ao tocar um objeto desconhecido (especialmente tecnologia ou artefatos de Kuar-Tor), você pode gastar 2 PEs para entender seu propósito e método básico de operação.
+                161. **Muralha de Força (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 4 PEs, você cria uma parede de energia invisível, mas sólida, com 10m de comprimento e 3m de altura. A parede tem RD 20 e dura uma cena.
+                162. **Olhar Petrificante (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 5 PEs, você pode fixar seu olhar em um alvo. Ele deve fazer um teste de CON (CD 14). Se falhar, é transformado em pedra. Uma falha por 5 ou mais torna a petrificação permanente, caso contrário, dura 1 hora.
+                163. **Parasita Psíquico (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode anexar um "parasita" mental a um alvo com um teste oposto de POD vs. Vontade. Enquanto o parasita estiver ativo, você pode ver através dos olhos do alvo e ouvir seus pensamentos superficiais. O alvo sente um mal-estar constante.
+                164. **Reanimação de Mortos (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 5 PEs e tocando um cadáver recente, você pode reanimá-lo como um zumbi sob seu controle. O zumbi tem ND 1 e dura até ser destruído. Você só pode controlar um zumbi por vez com esta vantagem.
+                165. **Sentir Magia (SAB/POD)**
+                     * **Custo:** 1 ponto
+                     * **Descrição:** Você pode sentir a presença e a força geral de auras mágicas a até 10 metros, sem precisar de uma magia específica.
+                166. **Sombra Viva (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Sua sombra pode se separar de você e agir de forma independente. Ela tem seus atributos mentais, mas FOR 1, DES 3, CON 1. Pode interagir com objetos pequenos e espionar. Se a sombra for destruída, você não pode usar esta habilidade por 24 horas.
+                167. **Teletransporte em Massa (POD)**
+                     * **Custo:** 5 pontos
+                     * **Pré-requisito:** Passo Dimensional
+                     * **Descrição:** Gastando 8 PEs, você pode teleportar a si mesmo e até 5 outras criaturas voluntárias que estejam a tocar em si para um local que você conheça bem a até 1km de distância.
+                168. **Toque da Entropia (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 3 PEs, seu toque acelera o envelhecimento de objetos inanimados, transformando metal em ferrugem e madeira em pó em segundos. Contra criaturas, causa 3d6 de dano necrótico que ignora armadura.
+                169. **Visão do Passado (SAB/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Ao se concentrar em um local, você pode gastar 4 PEs para ver um evento significativo que ocorreu ali no passado. O Mestre decide o que é revelado.
+                170. **Animar Objetos (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 4 PEs, você pode dar vida a um objeto inanimado de tamanho humano (uma estátua, uma cadeira) por uma cena. O objeto age sob seu comando e tem atributos baseados em seu material (ND 2 para madeira, ND 3 para pedra, etc.).
+                171. **Aura de Cura (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 5 PEs, você emana uma aura de 5 metros de raio por 3 rodadas. Todos os aliados dentro da aura (incluindo você) recuperam 1d6 PVs por rodada.
+                172. **Canto da Sereia (CAR/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode cantar uma melodia encantadora. Todos que a ouvem devem fazer um teste de Vontade (CD 12) ou ficarão fascinados, incapazes de agir a não ser para ouvir a canção. O efeito termina se você parar de cantar ou se os alvos sofrerem dano.
+                173. **Controle de Sonhos (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode entrar nos sonhos de uma pessoa que esteja a dormir. Lá, pode se comunicar, observar ou tentar influenciar o subconsciente do sonhador com um teste oposto de POD vs. Vontade.
+                174. **Criar Comida e Água (POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Gastando 2 PEs, você pode criar comida e água puras e nutritivas o suficiente para sustentar uma pessoa por um dia.
+                175. **Desintegrar (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Uma vez por dia, gastando 10 PEs, você pode disparar um raio que desintegra matéria. Faça um ataque de POD+Magia. Se acertar uma criatura, ela deve fazer um teste de CON (CD 16). Se falhar, é reduzida a pó. Se passar, sofre 6d6 de dano. O raio destrói um metro cúbico de matéria inanimada.
+                176. **Escudo de Vontade (SAB)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 2 PEs como uma reação, você pode adicionar seu atributo de SAB à sua RD contra um único ataque.
+                177. **Exorcismo (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você sabe como expulsar espíritos que possuem corpos ou objetos. Requer um ritual de 10 minutos e um teste oposto de POD vs. POD do espírito.
+                178. **Forma Etérea (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 5 PEs, você pode se tornar etéreo por uma cena. Você fica invisível, incorpóreo e pode se mover em qualquer direção. Você não pode afetar o mundo físico, e só pode ser afetado por ataques de força (como um Vento Forte) ou magia.
+                179. **Ilusão Realista (POD)**
+                     * **Custo:** 5 pontos
+                     * **Pré-requisito:** Poderes de Ilusão 4
+                     * **Descrição:** Suas ilusões são parcialmente reais. Elas podem causar metade do dano normal (2d6) mesmo que o alvo não acredite nelas, e podem ter substância suficiente para bloquear uma passagem por um curto período.
+                180. **Mão de Energia (POD)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você pode criar uma mão flutuante de energia que pode manipular objetos a até 10 metros de distância como se fosse sua própria mão.
+                181. **Metabolismo Inerte (CON/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode entrar em um estado de animação suspensa. Suas funções vitais caem para quase zero, e você não precisa de ar, comida ou água. Você pode permanecer neste estado por anos, parecendo morto para observadores casuais.
+                182. **Mimetismo Animal (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 2 PEs, você pode manifestar uma característica de um animal que você tocou (garras de um urso, visão de uma águia, veneno de uma cobra) por uma cena.
+                183. **Onda de Fadiga (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 3 PEs, você libera uma onda de cansaço. Todos os inimigos em um cone de 10 metros devem fazer um teste de CON (CD 12) ou sofrerão uma penalidade de -2 em todos os testes físicos por uma cena.
+                184. **Polimorfia (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 8 PEs, você pode transformar uma criatura voluntária (ou a si mesmo) em outra criatura de ND similar por uma hora. O alvo ganha todas as habilidades e fraquezas da nova forma.
+                185. **Rede de Contatos Psíquica (CAR/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você mantém uma ligação telepática sutil com um grupo de até 10 pessoas que você conhece bem. Pode enviar e receber emoções e mensagens curtas (uma ou duas palavras) instantaneamente com qualquer membro do grupo.
+                186. **Ressurreição (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Uma vez por mês, gastando 15 PEs e um ritual de uma hora, você pode trazer de volta à vida uma criatura que morreu há não mais de uma semana. O processo é exaustivo, e o alvo volta com 1 PV e uma Desvantagem permanente (a critério do Mestre).
+                187. **Santuário (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 2 PEs, você pode encantar um alvo. Qualquer inimigo que tente atacá-lo deve primeiro passar em um teste de Vontade (CD 12). Se falhar, não pode atacar aquele alvo naquela rodada. O efeito se quebra se o alvo protegido atacar.
+                188. **Sentir Fraqueza (SAB)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Com um teste de SAB (CD 10), você pode sentir a maior fraqueza de um alvo (uma vulnerabilidade a um tipo de dano, uma Desvantagem como Fobia, etc.).
+                189. **Sopro do Dragão (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 4 PEs, você expele um cone de 10 metros de um elemento à sua escolha (fogo, gelo, ácido, relâmpago). Todos na área sofrem 4d6 de dano (teste de DES, CD 12 para metade do dano).
+                190. **Viagem Temporal (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Esta é uma vantagem extremamente poderosa e controlada pelo Mestre. Uma vez por aventura, você pode gastar 10 PEs para viajar alguns minutos para o passado ou futuro, permitindo refazer uma ação ou obter uma visão crucial. O uso indevido pode ter consequências catastróficas.
+                191. **Aceleração (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 3 PEs, você pode agir em velocidade sobre-humana por 3 rodadas. Você ganha uma ação extra por rodada e +4 em testes de DES para defesa.
+                192. **Campo de Nulificação (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Você projeta uma aura de 3 metros onde nenhuma magia ou poder sobrenatural funciona. Manter a aura custa 3 PEs por rodada.
+                193. **Cópia Sombria (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 4 PEs, você pode criar um duplicado seu feito de sombras. A cópia tem metade dos seus PVs e causa metade do dano, mas possui todas as suas perícias e vantagens. Ela dura uma cena ou até ser destruída.
+                194. **Cura em Massa (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 8 PEs, você pode curar 3d6 PVs de até 6 criaturas voluntárias em um raio de 10 metros.
+                195. **Distorção da Realidade (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 5 PEs, você pode fazer uma pequena alteração na realidade. Transformar água em vinho, fazer uma porta aparecer onde não havia nenhuma, etc. O efeito deve ser menor e temporário (dura uma cena). O Mestre tem a palavra final.
+                196. **Enxame de Si Mesmo (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 4 PEs, você pode se dissolver em um enxame de pequenas criaturas (ratos, insetos, morcegos) por uma cena. Você controla o enxame como um todo, pode passar por pequenas aberturas e atacar múltiplos alvos.
+                197. **Magnetocinese (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você pode controlar metais ferrosos. Pode mover objetos de metal, criar um escudo improvisado com sucata (RD 8), ou disparar pedaços de metal como projéteis (dano 3d6).
+                198. **Palavra de Poder (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Você conhece uma Palavra de Poder. Uma vez por dia, gastando 8 PEs, você pode proferi-la para criar um efeito devastador: Atordoar (todos os inimigos em 10m ficam atordoados por 1d4 rodadas), Cegar, ou Matar (um único alvo deve passar num teste de CON (CD 16) ou morre).
+                199. **Reescrever o Passado (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Vantagem narrativa. Uma vez por aventura, você pode gastar 10 PEs para declarar que um evento passado aconteceu de forma ligeiramente diferente, a seu favor (ex: "Na verdade, eu deixei uma corda amarrada aqui da última vez que passamos"). O Mestre deve aprovar a mudança.
+                200. **Sonocinese (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode manipular o som. Pode criar silêncio, amplificar sua voz, imitar qualquer som que já ouviu, ou criar uma explosão sónica que causa 3d6 de dano e pode ensurdecer os alvos.
+                ### Vantagens Físicas (201-225)
+                201. **Ataque Rodopiante (DES)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 3 PEs, você pode usar sua ação para fazer um único ataque corpo a corpo contra todos os inimigos adjacentes a você.
+                202. **Equilíbrio Perfeito (DES)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você recebe +4 em todos os testes para manter o equilíbrio, seja em superfícies escorregadias, cordas bambas ou durante um terramoto. Você raramente é derrubado.
+                203. **Esquiva Acrobática (DES)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Quando você se defende, pode optar por fazer um teste de Acrobacia em vez da sua defesa normal. Se for bem-sucedido, além de evitar o dano, você pode se mover 2 metros em qualquer direção sem provocar ataques de oportunidade.
+                204. **Golpe Desarmante (DES)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você pode tentar desarmar um oponente como parte de um ataque. Faça um teste de ataque com uma penalidade de -4. Se acertar, em vez de causar dano, o alvo deve fazer um teste oposto de FOR ou DES (o que for maior) contra o resultado do seu ataque ou largará a arma.
+                205. **Imunidade a Dor (CON)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você não sofre penalidades por estar com poucos Pontos de Vida. Você ainda pode cair inconsciente ou morrer, mas luta com eficácia total até o último momento.
+                206. **Investida Implacável (FOR)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Se você se mover pelo menos 5 metros em linha reta antes de atacar, recebe +2 no seu teste de ataque e +1d6 no dano.
+                207. **Luta às Cegas (SAB)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você aprendeu a lutar sem depender da visão, usando outros sentidos. As penalidades por lutar em escuridão ou cego são reduzidas pela metade para você.
+                208. **Mestre de Duas Armas (DES)**
+                     * **Custo:** 5 pontos
+                     * **Pré-requisito:** Ambidestria, Coordenação de Combate.
+                     * **Descrição:** Você é um mestre no combate com duas armas. A penalidade por atacar com a sua mão inábil é completamente removida.
+                209. **Não Deixa Rastros (DES)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você se move com uma graça incrível. A dificuldade para rastreá-lo aumenta em +6.
+                210. **Pegada de Aço (FOR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você recebe +4 em testes para agarrar, segurar um oponente e para resistir a ser desarmado.
+                211. **Pele de Rinoceronte (CON)**
+                     * **Custo:** 5 pontos
+                     * **Pré-requisito:** Calejado 3.
+                     * **Descrição:** Sua pele é extraordinariamente grossa. Você ganha RD 5 contra dano de contusão, corte e perfuração.
+                212. **Postura Defensiva (FOR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você pode usar sua ação para adotar uma postura defensiva. Até o seu próximo turno, você ganha +4 na sua RD e em testes para resistir a ser movido.
+                213. **Resistência a Doenças Aprimorada (CON)**
+                     * **Custo:** 3 pontos
+                     * **Pré-requisito:** Imunidade a Doença.
+                     * **Descrição:** Você é imune a todas as doenças, incluindo as de origem mágica ou sobrenatural.
+                214. **Ricochete Controlado (DES)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Ao usar uma arma de arremesso ou de projétil, você pode gastar 3 PEs para fazer o projétil ricochetear em uma superfície para atingir um alvo que esteja em cobertura. Isso ignora os bônus de defesa da cobertura.
+                215. **Sangue Espesso (CON)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você é resistente a sangramento. Qualquer dano contínuo que você sofra por sangramento é reduzido pela metade.
+                216. **Técnica de Submissão (FOR/DES)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você é um mestre em imobilizar oponentes. Recebe +4 em testes de Luta Livre ou Artes Marciais para agarrar e imobilizar. Um oponente imobilizado por você sofre -4 para tentar escapar.
+                217. **Treinamento Extenuante (CON)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você pode se esforçar além dos seus limites normais. Uma vez por dia, você pode ganhar um bônus de +2 em qualquer teste de FOR, DES ou CON, mas sofre 1d6 de dano não letal depois.
+                218. **Visão Periférica (SAB)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você tem um campo de visão muito amplo. Você não pode ser flanqueado e recebe +2 em testes de percepção para notar perigos que se aproximam pelos lados.
+                219. **Agilidade Aquática (DES)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você não sofre penalidades de movimento ou de ataque ao lutar debaixo d'água.
+                220. **Arremessador de Precisão (DES)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode arremessar armas com a mesma precisão de um arqueiro. Você pode usar a perícia Arremessar para ataques localizados sem a penalidade normal.
+                221. **Corpo Leve (CON)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você pesa menos que o normal. Você sofre metade do dano por quedas e recebe +2 em testes de Saltar e Escalar.
+                222. **Estilo de Luta (Especial)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você é treinado num estilo de luta específico (ex: Esgrima, Boxe, Luta com Escudo). Ao usar as armas e táticas apropriadas, você ganha um bônus de +1 em ataque e +1 em defesa.
+                223. **Finta Enganosa (DES)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode usar sua ação para fazer um teste oposto de Enganação (usando DES) vs. Intuição do alvo. Se vencer, o próximo ataque que você fizer contra ele antes do fim do seu próximo turno nega o bônus de DES do alvo na defesa.
+                224. **Golpe de Misericórdia (FOR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você causa +2d6 de dano contra inimigos indefesos, inconscientes ou imobilizados.
+                225. **Recuperação Rápida (CON)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** O tempo que você leva para se recuperar de efeitos negativos (veneno, doença, atordoamento) é reduzido pela metade.
+                ### Vantagens Mentais (226-250)
+                226. **Antecipar Movimento (SAB)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você é um mestre em ler a linguagem corporal. Você ganha +2 em seus testes de defesa contra ataques corpo a corpo.
+                227. **Arquivista Mental (INT)**
+                     * **Custo:** 3 pontos
+                     * **Pré-requisito:** Memória Eidética.
+                     * **Descrição:** Sua memória é perfeitamente organizada. Você pode recordar informações complexas instantaneamente, sem necessidade de teste, desde que já as tenha visto ou ouvido antes.
+                228. **Conhecimento Tático (INT)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você recebe +2 em testes de Estratégia Militar e pode gastar sua ação para conceder a um aliado um bônus de +2 no seu próximo ataque, descrevendo uma tática para ele usar.
+                229. **Dedução Lógica (INT)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Ao analisar uma cena de crime ou um quebra-cabeça, você pode fazer uma pergunta específica de "sim" ou "não" ao Mestre. Se a pergunta for lógica e baseada nas evidências, o Mestre deve responder honestamente.
+                230. **Familiaridade com Armadilhas (SAB)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você tem um sexto sentido para armadilhas. Você recebe um teste de SAB (CD 10) para sentir que algo está errado sempre que se aproxima de uma armadilha, mesmo que não a veja.
+                231. **Foco Inquebrável (SAB)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Se você estiver a realizar uma ação que leva várias rodadas (lançar uma magia, arrombar uma fechadura), não precisa fazer testes para manter a concentração se sofrer dano, a menos que o dano seja superior à sua CON.
+                232. **Intuição do Caçador (SAB)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você tem um instinto incrível para caçar. Recebe +3 em testes de Rastreio e, ao seguir um rastro, pode fazer um teste de SAB (CD 12) para determinar o estado geral da sua presa (ferida, cansada, etc.).
+                233. **Mestre de Disfarces (INT)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você recebe +4 em testes de Disfarce e o tempo para criar um disfarce convincente é reduzido pela metade.
+                234. **Mente Analítica (INT)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você recebe +2 em todos os testes para avaliar o valor de itens, identificar substâncias ou analisar dados.
+                235. **Navegador Nato (SAB)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você nunca se perde em ambientes naturais e pode sempre encontrar o caminho de volta. Recebe +3 em testes de Navegação e Senso de Direção.
+                236. **Planejador Meticuloso (INT)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Quando você tem tempo para planejar uma operação (um assalto, uma emboscada), você pode pensar em contingências. Uma vez durante a operação, você pode declarar que "já tinha um plano para isso" e ganhar um bônus de +4 em um teste para superar um obstáculo inesperado.
+                237. **Presença Calmante (SAB)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Sua calma é contagiante. Aliados a até 5 metros de você recebem +2 em testes para resistir a medo e pânico.
+                238. **Resiliência Mental (SAB)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Você é mentalmente forte. Para cada ponto gasto, você ganha +1 em testes de Vontade.
+                239. **Saber da Besta (INT)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você tem um vasto conhecimento sobre a fauna (normal ou monstruosa). Recebe +3 em testes para identificar criaturas, saber seus hábitos e fraquezas.
+                240. **Sentir o Perigo (SAB)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você tem um sexto sentido para o perigo iminente. Você nunca pode ser surpreendido no início de um combate.
+                241. **Solucionador de Problemas (INT)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Quando confrontado com um problema não-combate (uma porta trancada, uma ponte quebrada), você pode fazer um teste de INT (CD 12) para ter uma ideia de como resolvê-lo, mesmo que não tenha as perícias certas.
+                242. **Treinamento Psicológico (INT)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você é treinado para resistir a interrogatórios e tortura. Recebe +6 em testes de Vontade para resistir a tais métodos.
+                243. **Visão de Pontos Fracos (SAB)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Em combate, você pode gastar uma ação para analisar um oponente. Com um teste de SAB (CD 12), você identifica um ponto fraco. Seus ataques contra esse oponente ignoram 3 pontos de sua RD pelo resto do combate.
+                244. **Avaliação Rápida (INT)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você pode avaliar rapidamente um oponente. Com um teste de INT (CD 10) como uma ação livre no início do combate, você pode determinar qual dos atributos físicos (FOR, DES, CON) do alvo é o mais alto e qual é o mais baixo.
+                245. **Conhecimento de Rua (INT)**
+                     * **Custo:** 1 ponto
+                     * **Descrição:** Você conhece os códigos e as gírias do submundo. Recebe +2 em testes sociais ao lidar com criminosos, guardas corruptos ou informantes.
+                246. **Especialista em Demolições (INT)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você recebe +3 em testes de Explosivos e sempre sabe a melhor forma de derrubar uma estrutura com o mínimo de explosivos.
+                247. **Farmacologia de Campo (INT)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode usar plantas e minerais locais para criar remédios improvisados. Com um teste de Sobrevivência e Farmácia (CD 14), pode criar uma poção que cura 1d6 PVs ou um antídoto para um veneno natural.
+                248. **Mente de Colmeia (INT/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você pode criar uma ligação mental com até 5 aliados voluntários. Vocês podem compartilhar pensamentos e sensações superficiais, permitindo uma coordenação perfeita em combate (todos recebem +1 na iniciativa e em testes de ataque).
+                249. **Senso de Embuste (SAB)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você tem um talento especial para detetar mentiras e enganos. Recebe +3 em testes de Sentir Motivação.
+                250. **Transe de Batalha (SAB)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você pode entrar num estado de foco total em combate. Gastando 3 PEs, por uma cena, você se torna imune a distrações, ilusões e truques mentais que não sejam ataques diretos.
+                ### Vantagens Sociais (251-275)
+                251. **Aliado Fiel (CAR)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você tem um aliado (NPC) que é completamente leal a você. Ele nunca o trairá e arriscará a vida por si. O aliado é construído com a mesma quantidade de pontos que um PJ inicial.
+                252. **Amigo em Cada Porto (CAR)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Não importa para onde você vá, você parece conhecer alguém. Uma vez por sessão, ao chegar a um novo local, você pode declarar que tem um contato amigável lá, que pode oferecer abrigo, informações ou uma pequena ajuda.
+                253. **Aparência Mediana (CAR)**
+                     * **Custo:** 1 ponto
+                     * **Descrição:** Seu rosto é incrivelmente esquecível. As pessoas têm grande dificuldade em se lembrar de si ou descrevê-lo. Você recebe +4 em testes para se misturar numa multidão ou evitar ser identificado.
+                254. **Artista Talentoso (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Escolha uma forma de arte (música, pintura, escultura). Você é excecionalmente talentoso nela. Recebe +3 em testes de Artista e pode ganhar a vida ou obter favores com seu talento.
+                255. **Camaleão Social (CAR)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode adaptar seu sotaque, maneirismos e linguagem corporal para se encaixar em qualquer grupo social. Recebe +4 em testes para se passar por membro de uma cultura, classe social ou organização diferente.
+                256. **Conexões no Submundo (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você tem uma rede de contatos entre ladrões, contrabandistas e assassinos. Pode obter informações ilegais, bens do mercado negro ou contratar serviços duvidosos com mais facilidade.
+                257. **Coração Honesto (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você exala sinceridade. As pessoas (e algumas criaturas mágicas) são mais propensas a acreditar em si. Recebe +3 em testes de Diplomacia e para convencer os outros da sua honestidade.
+                258. **Dívida de Honra (CAR)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Uma pessoa ou organização poderosa deve-lhe um grande favor. O nível da vantagem determina o quão poderoso é o seu devedor e o tamanho do favor que você pode pedir.
+                259. **Elo de Grupo (CAR)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Seu grupo de aventureiros tem um vínculo especial. Uma vez por sessão, qualquer membro do grupo pode gastar 2 PEs para dar um bônus de +2 no teste de outro membro do grupo, não importa a distância, desde que estejam na mesma missão.
+                260. **Flerte Inofensivo (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você tem um charme natural que não é ameaçador. Recebe +3 em testes de Sedução ou Manipulação para obter pequenas informações ou favores sem criar complicações românticas.
+                261. **Herdeiro de Legado (CAR)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pertence a uma linhagem famosa ou a uma organização com uma história rica. Pode ter acesso a conhecimentos antigos, artefatos de família ou um respeito inerente de certos grupos.
+                262. **Imunidade Diplomática (CAR)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você é um representante oficial de uma nação ou poder. Não pode ser preso ou processado em terras estrangeiras sem um processo diplomático complexo.
+                263. **Linguagem Corporal (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você é um mestre em comunicação não-verbal. Pode transmitir mensagens complexas através de gestos subtis e recebe +2 para interpretar as intenções dos outros através da sua postura.
+                264. **Mártir (CAR)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Sua devoção a uma causa é tão grande que inspira os outros. Se você for derrotado ou se sacrificar em combate, todos os seus aliados recebem +2 em todos os testes pelo resto da cena.
+                265. **Pacificador (CAR)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você tem um dom para acalmar os ânimos. Recebe +4 em testes de Diplomacia para resolver disputas sem violência. Inimigos precisam passar num teste de Vontade para atacá-lo enquanto você estiver a falar calmamente.
+                266. **Patrono (CAR)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Você tem um patrono rico ou influente que financia suas aventuras e lhe dá missões. O nível da vantagem determina os recursos e o poder do seu patrono.
+                267. **Presença Imponente (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Sua altura, voz ou postura fazem com que você se destaque. Recebe +2 em testes de Intimidação e Falar em Público.
+                268. **Salvador (CAR)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você salvou a vida de um NPC ou a comunidade dele. Eles lhe devem uma gratidão imensa e farão quase tudo para ajudá-lo quando você estiver na área deles.
+                269. **Sempre Bem-Vindo (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você tem um jeito que faz com que as pessoas gostem de si. Você pode encontrar comida e abrigo em quase qualquer comunidade civilizada, desde que não abuse da hospitalidade.
+                270. **Tradição Oral (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Você é um contador de histórias talentoso. Pode usar a perícia Artista para transmitir informações, inspirar coragem (+2 em testes de Vontade para aliados) ou simplesmente ganhar a vida.
+                271. **Voz Melodiosa (CAR)**
+                     * **Custo:** 1 ponto
+                     * **Descrição:** Sua voz é excecionalmente agradável de se ouvir. Recebe +2 em testes de Sedução, Diplomacia ou Artista (canto).
+                272. **Chefe de Equipa (CAR)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você é bom a coordenar pessoas. Ao realizar uma ação de ajuda, o bônus que você concede ao seu aliado aumenta em +2.
+                273. **Confidente (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** As pessoas sentem-se à vontade para lhe contar os seus segredos. Você recebe +3 em testes para obter informações através de conversas.
+                274. **Dupla Face (CAR)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você mantém duas identidades sociais distintas e convincentes (ex: nobre de dia, ladrão de noite). Trocar entre elas requer algum tempo e preparação, mas são tratadas como duas pessoas diferentes pela maioria.
+                275. **Respeito dos Antigos (CAR)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Os mais velhos veem sabedoria e respeito em si. Você recebe +3 em interações sociais com pessoas significativamente mais velhas que você.
+                ### Vantagens Sobrenaturais / Exóticas (276-300)
+                276. **Armadura de Vazio (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição (Tema Kuar-Tor):** Gastando 3 PEs, você pode cobrir seu corpo com uma armadura quitinosa e crepitante de energia do Vazio. A armadura concede RD 8 e causa 1d6 de dano a qualquer um que o ataque corpo a corpo com armas naturais.
+                277. **Bilocação (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Gastando 5 PEs, você pode existir em dois lugares ao mesmo tempo por uma cena. Sua cópia tem as mesmas estatísticas, mas vocês partilham os mesmos PVs e PEs. Dano em um afeta o outro.
+                278. **Comunhão com a Cidade (SAB/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Em ambientes urbanos, você pode "ouvir" a cidade. Gastando 2 PEs, pode sentir perturbações gerais (um grande incêndio, um motim) ou tentar encontrar o caminho mais rápido para um endereço.
+                279. **Contrato de Mercenário Planar (Especial)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você tem um contrato com uma entidade de outro plano (um demónio, um anjo, um génio) que pode ser invocado para lutar por si. A invocação custa 5 PEs e a entidade (ND 4) luta por uma cena antes de voltar para casa. Só pode ser invocado uma vez por dia.
+                280. **Corromper Objeto (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Gastando 3 PEs e tocando um objeto normal, você pode imbuí-lo com uma pequena maldição. Quem usar o objeto sofre uma penalidade de -2 em todos os testes. O efeito dura 1 hora.
+                281. **Dança da Batalha (DES/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Seus movimentos em combate são uma dança hipnótica e mortal. Para cada ataque corpo a corpo que você esquiva com sucesso, ganha um bônus cumulativo de +1 no seu próximo ataque (máximo +5).
+                282. **Devorar Magia (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Quando uma magia é lançada sobre si, você pode gastar 4 PEs como uma reação para tentar "comê-la". Faça um teste oposto de POD vs. o POD+Magia do conjurador. Se vencer, a magia é anulada e você recupera PEs iguais ao nível da magia.
+                283. **Eletromagnetismo (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você pode gerar e controlar campos eletromagnéticos. Pode se prender a superfícies metálicas, desviar projéteis de metal (+4 na defesa contra eles) ou apagar informações em dispositivos eletrónicos.
+                284. **Fisiologia Alienígena (CON)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Sua biologia é completamente diferente da humana. Você pode ser imune a venenos e doenças humanas, mas vulnerável a substâncias comuns. Você tem um órgão ou habilidade bizarra (definido com o Mestre).
+                285. **Hibernação Curativa (CON/POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode entrar num coma autoinduzido para se curar. Por cada dia em hibernação, você recupera 10 PVs e pode se curar de doenças ou venenos.
+                286. **Injeção de Memória (INT/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Gastando 5 PEs e tocando um alvo, você pode implantar uma memória falsa ou extrair uma memória verdadeira. Requer um teste oposto de INT vs. Vontade do alvo.
+                287. **Linguagem Primordial (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Você pode falar a linguagem da criação. Suas palavras podem ter efeitos mágicos menores sem gastar PEs (criar luz, consertar um objeto pequeno). Para efeitos maiores, você pode lançar qualquer magia de nível 1 como se a conhecesse, gastando os PEs normais.
+                288. **Mestre dos Elementos (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Escolha um elemento (Fogo, Água, Ar, Terra). Você é imune a dano desse elemento e seus poderes baseados nele custam 1 PE a menos para serem usados.
+                289. **Olhar para o Vazio (SAB/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição (Tema Kuar-Tor):** Você olhou para a fenda de Kuar-Tor e não enlouqueceu completamente. Gastando 3 PEs, você pode forçar um alvo a partilhar essa visão. O alvo deve fazer um teste de Vontade (CD 14) ou ficará paralisado de horror por 1d4 rodadas.
+                290. **Pele de Espelhos (POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Sua pele reflete luz e energia. Você ganha RD 5 contra ataques baseados em laser ou luz. Além disso, uma vez por rodada, você pode tentar refletir uma magia de alvo único de volta para o conjurador com um teste oposto de POD vs. POD do conjurador.
+                291. **Portador da Praga (CON/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você é um portador assintomático de uma doença mágica. Com um toque (ou através de seu sangue), você pode infetar outros. A doença pode causar penalidades, dano contínuo ou outros efeitos (definidos com o Mestre).
+                292. **Quinesis Sónica (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode criar vibrações sónicas. Pode usar isso para criar um escudo sónico (RD 6), focar as vibrações para quebrar objetos (dano 3d6 contra objetos) ou imitar vozes.
+                293. **Realidade de Bolso (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição:** Você pode gastar 10 PEs para criar um pequeno semiplano (como uma sala de 10x10m) que dura 24 horas. Você e até 5 outras pessoas podem entrar e sair à vontade. É um refúgio perfeito.
+                294. **Rituais de Sangue (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode usar seu próprio sangue para potenciar sua magia. Pode sacrificar PVs em vez de PEs para lançar magias, à taxa de 2 PVs por 1 PE.
+                295. **Simbionte (Especial)**
+                     * **Custo:** 1 a 5 pontos
+                     * **Descrição:** Você hospeda uma criatura simbiótica que lhe concede uma Vantagem de custo igual. Em troca, o simbionte tem necessidades (comida específica, comportamento estranho) e pode tentar influenciar suas ações.
+                296. **Tecnomancia (INT/POD)**
+                     * **Custo:** 4 pontos
+                     * **Descrição:** Você pode lançar magias através da tecnologia. Pode usar um computador para lançar um feitiço de confusão numa rede de segurança, ou encantar uma bala para procurar o seu alvo.
+                297. **Toque Fantasma (POD)**
+                     * **Custo:** 3 pontos
+                     * **Descrição:** Você pode fazer com que suas mãos e braços se tornem temporariamente incorpóreos. Isso permite que você alcance através de paredes finas ou ataque um oponente ignorando sua armadura (o ataque causa metade do dano normal).
+                298. **Unidade com a Ferramenta (Especial)**
+                     * **Custo:** 2 pontos
+                     * **Descrição:** Escolha uma arma ou ferramenta. Ela se torna uma extensão do seu corpo. Você nunca pode ser desarmado dela, pode "chamá-la" para sua mão de uma curta distância e ganha +1 em todos os testes ao usá-la.
+                299. **Viagem Onírica (POD)**
+                     * **Custo:** 4 pontos
+                     * **Pré-requisito:** Controle de Sonhos.
+                     * **Descrição:** Você pode usar o mundo dos sonhos como um meio de transporte. Ao adormecer, pode viajar para o sonho de outra pessoa que você conheça, não importa a distância, e emergir perto dela quando acordar.
+                300. **Vórtice do Vazio (POD)**
+                     * **Custo:** 5 pontos
+                     * **Descrição (Tema Kuar-Tor):** Uma vez por dia, gastando 8 PEs, você pode abrir uma pequena fenda para o Vazio. A fenda funciona como um vórtice, puxando todos num raio de 5 metros para ela. As vítimas devem fazer um teste de FOR (CD 14) a cada rodada para não serem sugadas. A fenda dura 3 rodadas. O que acontece com quem é sugado fica a critério do Mestre (morte, teleporte para um lugar horrível, etc.).
+            `;
+            
+            const performanceData = [
+                { Recruta: "Kaelen", Inimigos: 42, XP: 1250, Missoes: 12 },
+                { Recruta: "Lyra", Inimigos: 31, XP: 1100, Missoes: 11 },
+                { Recruta: "Borin", Inimigos: 55, XP: 1300, Missoes: 10 },
+                { Recruta: "Seraphina", Inimigos: 25, XP: 1400, Missoes: 15 },
+                { Recruta: "Jax", Inimigos: 48, XP: 1150, Missoes: 13 },
+            ];
+
+            const rulesData = [
+                { 
+                    title: "Atributos Principais", 
+                    content: "Existem 6 atributos: <strong>Força (FOR)</strong> para poder físico; <strong>Destreza (DES)</strong> para agilidade e precisão; <strong>Constituição (CON)</strong> para resistência e vitalidade; <strong>Inteligência (INT)</strong> para raciocínio e conhecimento; <strong>Sabedoria (SAB)</strong> para perceção e força de vontade; e <strong>Carisma (CAR)</strong> para influência social."
+                },
+                { 
+                    title: "Testes Normais e Opostos",
+                    content: "A maioria das ações é resolvida com um <strong>Teste Normal</strong>: 2d6 + Atributo/Perícia contra uma Classe de Dificuldade (CD) definida pelo Mestre. Um <strong>Teste Oposto</strong> ocorre quando dois personagens competem. Ambos rolam 2d6 + Atributo/Perícia relevante, e o maior resultado vence."
+                },
+                {
+                    title: "Acerto Crítico e Falha Crítica",
+                    content: "Um resultado <strong>12</strong> nos dados (2d6) é um <strong>Acerto Crítico</strong>, resultando num sucesso espetacular (dano dobrado em combate, por exemplo). Um resultado <strong>2</strong> nos dados é uma <strong>Falha Crítica</strong>, resultando num fracasso desastroso, com consequências negativas para o personagem."
+                },
+                {
+                    title: "Combate Básico",
+                    content: "A ordem do combate é definida pela <strong>Iniciativa</strong> (2d6 + DES). Na sua vez, um personagem pode realizar uma ação de movimento e uma ação padrão (como atacar ou usar uma habilidade). Atacar envolve um teste de 2d6 + Atributo + Perícia contra a Defesa do alvo. O dano é subtraído dos Pontos de Vida (PV) do alvo."
+                }
+            ];
+
+            let parsedAdvantages = [];
+
+            function parseAdvantages() {
+                const lines = advantagesData.split('\n');
+                let currentCategory = "";
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine.startsWith('###')) {
+                        currentCategory = trimmedLine.replace('###', '').split('(')[0].trim();
+                    } else if (trimmedLine.match(/^\d+\./)) {
+                        const nameMatch = trimmedLine.match(/\*\*(.*?)\*\*/);
+                        if (nameMatch) {
+                            parsedAdvantages.push({
+                                name: nameMatch[1],
+                                category: currentCategory,
+                                cost: "N/A",
+                                description: "N/A",
+                                raw: trimmedLine
+                            });
+                        }
+                    } else if (trimmedLine.startsWith('* **Custo:**')) {
+                        if (parsedAdvantages.length > 0) {
+                            const costMatch = trimmedLine.match(/(\d(\s?a\s?\d)?)/);
+                            if (costMatch) parsedAdvantages[parsedAdvantages.length - 1].cost = costMatch[0];
+                        }
+                    } else if (trimmedLine.startsWith('* **Descrição:**')) {
+                        if (parsedAdvantages.length > 0) {
+                            parsedAdvantages[parsedAdvantages.length - 1].description = trimmedLine.replace('* **Descrição:**', '').trim();
+                        }
+                    } else if(trimmedLine.startsWith('*') && parsedAdvantages.length > 0){
+                         parsedAdvantages[parsedAdvantages.length - 1].description += " " + trimmedLine.replace('*','').trim();
+                    }
+                }
+            }
+
+            function displayAdvantages() {
+                const list = document.getElementById('advantages-list');
+                const search = document.getElementById('advantage-search').value.toLowerCase();
+                const category = document.getElementById('advantage-category').value;
+                const cost = document.getElementById('advantage-cost').value;
+
+                list.innerHTML = '';
+                
+                const filtered = parsedAdvantages.filter(adv => {
+                    const searchMatch = adv.name.toLowerCase().includes(search) || adv.description.toLowerCase().includes(search);
+                    const categoryMatch = category === 'all' || adv.category === category;
+                    const costMatch = cost === 'all' || adv.cost.includes(cost);
+                    return searchMatch && categoryMatch && costMatch;
+                });
+
+                filtered.forEach(adv => {
+                    const costText = adv.cost.includes("a") ? adv.cost.replace(" a ", "-") : adv.cost;
+                    const card = document.createElement('div');
+                    card.className = 'advantage-card bg-[#FDF6E3] p-4 rounded-lg shadow-sm border-l-4 border-[#F39C12]';
+                    card.innerHTML = `
+                        <h3 class="font-bold text-xl text-[#D35400]">${adv.name}</h3>
+                        <p class="text-sm font-semibold text-stone-600 mb-2">Custo: ${costText} | Categoria: ${adv.category}</p>
+                        <p class="text-stone-700">${adv.description}</p>
+                    `;
+                    list.appendChild(card);
+                });
+            }
+
+            function setupNavigation() {
+                const navButtons = document.querySelectorAll('.nav-button');
+                const contentSections = document.querySelectorAll('.content-section');
+
+                navButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const targetId = 'section-' + button.id.split('-')[1];
+                        
+                        navButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        contentSections.forEach(section => {
+                            section.classList.remove('active');
+                            if (section.id === targetId) {
+                                section.classList.add('active');
+                            }
+                        });
+                    });
+                });
+            }
+            
+            function setupRulesAccordion() {
+                const accordion = document.getElementById('rules-accordion');
+                rulesData.forEach(rule => {
+                    const ruleDiv = document.createElement('div');
+                    ruleDiv.className = 'bg-[#FDF6E3] rounded-lg';
+                    ruleDiv.innerHTML = `
+                        <button class="w-full text-left p-4 font-bold text-lg text-[#D35400] hover:bg-orange-100/50 rounded-lg flex justify-between items-center">
+                            <span>${rule.title}</span>
+                            <span>&#9662;</span>
+                        </button>
+                        <div class="p-4 pt-0" style="display: none;">
+                            <p>${rule.content}</p>
+                        </div>
+                    `;
+                    accordion.appendChild(ruleDiv);
+                });
+
+                accordion.addEventListener('click', (e) => {
+                    const button = e.target.closest('button');
+                    if (button) {
+                        const content = button.nextElementSibling;
+                        const icon = button.querySelector('span:last-child');
+                        const isVisible = content.style.display === 'block';
+                        content.style.display = isVisible ? 'none' : 'block';
+                        icon.innerHTML = isVisible ? '&#9662;' : '&#9652;';
+                    }
+                });
+            }
+
+            function setupCharts() {
+                const chartColors = ['#D35400', '#E67E22', '#F39C12', '#F1C40F', '#27AE60'];
+                const recruitNames = performanceData.map(d => d.Recruta);
+
+                new Chart(document.getElementById('enemies-chart'), {
+                    type: 'bar',
+                    data: {
+                        labels: recruitNames,
+                        datasets: [{
+                            label: 'Inimigos Derrotados',
+                            data: performanceData.map(d => d.Inimigos),
+                            backgroundColor: chartColors,
+                            borderColor: '#FDF6E3',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+
+                new Chart(document.getElementById('xp-chart'), {
+                    type: 'bar',
+                    data: {
+                        labels: recruitNames,
+                        datasets: [{
+                            label: 'XP Ganhos',
+                            data: performanceData.map(d => d.XP),
+                            backgroundColor: chartColors,
+                            borderColor: '#FDF6E3',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            parseAdvantages();
+            displayAdvantages();
+            setupNavigation();
+            setupRulesAccordion();
+            setupCharts();
+
+            document.getElementById('advantage-search').addEventListener('input', displayAdvantages);
+            document.getElementById('advantage-category').addEventListener('change', displayAdvantages);
+            document.getElementById('advantage-cost').addEventListener('change', displayAdvantages);
+        });
+    </script>
+</body>
+</html>

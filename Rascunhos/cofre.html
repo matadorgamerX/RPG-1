@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cofre Animado com Senha e Detalhes</title>
+    <style>
+        /* Estilos globais para o corpo da página */
+        body {
+            display: flex; /* Usa flexbox para centralizar o conteúdo */
+            flex-direction: column; /* Coloca os itens em coluna para o cofre e controles */
+            justify-content: center; /* Centraliza verticalmente */
+            align-items: center; /* Centraliza horizontalmente */
+            min-height: 100vh; /* Ocupa 100% da altura da viewport */
+            margin: 0; /* Remove margem padrão do corpo */
+            background-color: #333; /* Cor de fundo escura */
+            font-family: 'Inter', sans-serif; /* Fonte Inter */
+            overflow: hidden; /* Esconde qualquer overflow, evitando barras de rolagem */
+            color: #eee; /* Cor do texto padrão */
+            padding-bottom: 80px; /* Espaço para os controles */
+        }
+
+        /* Estilo para o container principal do cofre */
+        .cofre-container {
+            position: relative; /* Para posicionar as portas e o conteúdo */
+            width: 400px; /* Largura fixa do cofre */
+            height: 300px; /* Altura fixa do cofre */
+            perspective: 1000px; /* Adiciona perspectiva 3D para a animação das portas */
+            border: 5px solid #555; /* Borda do cofre */
+            border-radius: 8px; /* Cantos arredondados */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7); /* Sombra para profundidade */
+            background-color: #666; /* Cor de fundo do cofre */
+            display: flex; /* Flexbox para centralizar o conteúdo interno se houver */
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px; /* Espaço entre o cofre e os controles */
+        }
+
+        /* Estilo para as portas do cofre */
+        .cofre-porta {
+            position: absolute; /* Posicionamento absoluto dentro do container */
+            width: 50%; /* Cada porta ocupa metade da largura do cofre */
+            height: 100%; /* Cada porta ocupa 100% da altura do cofre */
+            background-color: #444; /* Cor das portas */
+            border: 2px solid #333; /* Borda das portas */
+            box-sizing: border-box; /* Inclui padding e borda na largura/altura */
+            transform-origin: center center; /* Define o ponto de origem para transformações */
+            transition: transform 1s ease-in-out; /* Transição suave para a animação de abertura */
+            z-index: 10; /* Garante que as portas fiquem acima do conteúdo secreto */
+            display: flex; /* Para posicionar os detalhes internos */
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            color: #eee;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            border-radius: 8px; /* Cantos arredondados */
+        }
+
+        /* Estilo específico para a porta esquerda */
+        .left-door {
+            left: 0; /* Alinha à esquerda do container */
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+
+        /* Estilo específico para a porta direita */
+        .right-door {
+            right: 0; /* Alinha à direita do container */
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        /* Estado das portas quando o cofre está aberto (classe 'open' adicionada via JS) */
+        .cofre-container.open .left-door {
+            transform: rotateY(-90deg) translateX(-50%); /* Gira 90 graus no eixo Y e move para a esquerda */
+            transform-origin: left center; /* Gira a partir da borda esquerda */
+            transition: transform 1s ease-in-out 0.2s; /* Adiciona um pequeno atraso para a animação da chave */
+        }
+
+        .cofre-container.open .right-door {
+            transform: rotateY(90deg) translateX(50%); /* Gira 90 graus no eixo Y e move para a direita */
+            transform-origin: right center; /* Gira a partir da borda direita */
+            transition: transform 1s ease-in-out 0.2s; /* Adiciona um pequeno atraso para a animação da chave */
+        }
+
+        /* Estilo para o conteúdo secreto (a imagem PNG) */
+        .conteudo-secreto {
+            position: absolute; /* Posicionamento absoluto dentro do container */
+            opacity: 0; /* Inicialmente invisível */
+            transition: opacity 1s ease-in-out; /* Transição suave para o aparecimento */
+            z-index: 5; /* Fica atrás das portas quando fechadas */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 90%; /* Ajusta o tamanho da imagem dentro do cofre */
+            height: 90%;
+            overflow: hidden; /* Esconde qualquer parte da imagem que transborde */
+            border-radius: 8px; /* Cantos arredondados */
+            flex-wrap: wrap; /* Permite que moedas e orbs se ajustem */
+            gap: 5px; /* Espaço entre os itens */
+            padding: 10px;
+            box-sizing: border-box;
+            background-color: #2a2a2a; /* Fundo interno do cofre */
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+        }
+
+        /* Estilo para a imagem dentro do conteúdo secreto */
+        .conteudo-secreto img {
+            max-width: 80%; /* Garante que a imagem não seja maior que seu container */
+            max-height: 80%; /* Garante que a imagem não seja maior que seu container */
+            display: block; /* Remove espaço extra abaixo da imagem */
+            object-fit: contain; /* Redimensiona a imagem para caber sem cortar */
+            border-radius: 8px; /* Cantos arredondados */
+            flex-shrink: 0; /* Não permite que a imagem encolha se houver muitos outros elementos */
+        }
+
+        /* Quando o cofre estiver aberto, o conteúdo secreto se torna visível */
+        .cofre-container.open .conteudo-secreto {
+            opacity: 1; /* Torna o conteúdo visível */
+            transition-delay: 0.5s; /* Pequeno atraso para a imagem aparecer após as portas começarem a abrir */
+        }
+
+        /* Estilos para os controles (campo de senha e botões) */
+        .controles {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px; /* Espaço entre os elementos */
+            margin-top: 20px; /* Espaço acima dos controles */
+        }
+
+        /* Estilo para o campo de senha */
+        #passwordInput {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            background-color: #444;
+            color: #eee;
+            font-size: 1em;
+            width: 200px;
+            text-align: center;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilo para os botões */
+        button {
+            padding: 10px 20px; /* Espaçamento interno do botão */
+            font-size: 1em; /* Tamanho da fonte */
+            background-color: #007bff; /* Cor de fundo do botão */
+            color: white; /* Cor do texto do botão */
+            border: none; /* Remove a borda padrão */
+            border-radius: 5px; /* Cantos arredondados */
+            cursor: pointer; /* Muda o cursor ao passar por cima */
+            transition: background-color 0.3s ease, transform 0.3s ease; /* Transição suave na cor de fundo e transformação */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Sombra para o botão */
+        }
+
+        /* Efeito hover para os botões */
+        button:hover {
+            background-color: #0056b3; /* Cor de fundo mais escura ao passar o mouse */
+            transform: translateY(-2px); /* Pequeno movimento para cima */
+        }
+
+        /* Estilo para mensagens de feedback */
+        #message {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #ffdd57; /* Cor amarela para mensagens de erro/info */
+            height: 20px; /* Garante que o espaço da mensagem esteja reservado */
+        }
+
+        /* Detalhes da porta: Alças */
+        .door-handle {
+            position: absolute;
+            width: 25px;
+            height: 80px;
+            background-color: #222;
+            border-radius: 5px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+            z-index: 12; /* Acima do mecanismo de trava */
+        }
+
+        .left-door .door-handle {
+            right: 15px; /* Posição da alça na porta esquerda */
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .right-door .door-handle {
+            left: 15px; /* Posição da alça na porta direita */
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Detalhes da porta: Rebites */
+        .rivet {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #222;
+            border-radius: 50%;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+            z-index: 12;
+        }
+
+        /* Posições dos rebites na porta esquerda */
+        .left-door .rivet:nth-child(2) { top: 15px; left: 15px; }
+        .left-door .rivet:nth-child(3) { top: 15px; right: 15px; }
+        .left-door .rivet:nth-child(4) { bottom: 15px; left: 15px; }
+        .left-door .rivet:nth-child(5) { bottom: 15px; right: 15px; }
+
+        /* Posições dos rebites na porta direita */
+        .right-door .rivet:nth-child(2) { top: 15px; left: 15px; }
+        .right-door .rivet:nth-child(3) { top: 15px; right: 15px; }
+        .right-door .rivet:nth-child(4) { bottom: 15px; left: 15px; }
+        .right-door .rivet:nth-child(5) { bottom: 15px; right: 15px; }
+
+        /* Estilo para o mecanismo de trava central */
+        .lock-mechanism {
+            position: absolute;
+            top: 50%;
+            left: 50%; /* Centralizado na porta direita */
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: #222;
+            border-radius: 50%;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 0 10px rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 11; /* Acima das portas, mas abaixo da alça */
+        }
+
+        /* Estilo para o buraco da chave */
+        .keyhole {
+            width: 15px;
+            height: 15px;
+            background-color: #000;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        /* Parte de baixo do buraco da chave */
+        .keyhole::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 10px;
+            background-color: #000;
+            border-bottom-left-radius: 3px;
+            border-bottom-right-radius: 3px;
+        }
+
+        /* O indicador de giro da chave */
+        .key-turn-indicator {
+            position: absolute;
+            width: 20px;
+            height: 5px;
+            background-color: #aaa;
+            border-radius: 2px;
+            transform-origin: 50% 50%; /* Rotação a partir do centro */
+            transition: transform 0.3s ease-out; /* Animação de giro */
+        }
+
+        /* Animação do giro da chave quando o cofre está aberto */
+        .cofre-container.open .key-turn-indicator {
+            transform: rotate(90deg); /* Gira 90 graus para simular a chave girando */
+        }
+
+        /* Estilos para as moedas */
+        .coin {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #ffd700, #daa520); /* Gradiente dourado */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,223,0,0.7);
+            position: relative;
+            flex-shrink: 0; /* Não permite que as moedas encolham */
+        }
+
+        .coin::before {
+            content: '$'; /* Símbolo de dólar ou outro símbolo */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(0,0,0,0.3);
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        /* Estilos para as bolinhas de XP */
+        .xp-orb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #aaffaa, #00aa00); /* Gradiente verde claro para o centro */
+            box-shadow: 0 0 15px 5px rgba(0,255,0,0.6); /* Efeito de brilho verde */
+            animation: pulse-glow 1.5s infinite alternate; /* Animação de pulsar */
+            flex-shrink: 0; /* Não permite que os orbs encolham */
+        }
+
+        /* Animação para o brilho das bolinhas de XP */
+        @keyframes pulse-glow {
+            from {
+                box-shadow: 0 0 15px 5px rgba(0,255,0,0.6);
+            }
+            to {
+                box-shadow: 0 0 25px 10px rgba(0,255,0,0.9);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cofre-container">
+        <!-- Porta esquerda do cofre -->
+        <div class="cofre-porta left-door">
+            <div class="door-handle"></div>
+            <!-- Rebites da porta esquerda -->
+            <div class="rivet"></div>
+            <div class="rivet"></div>
+            <div class="rivet"></div>
+            <div class="rivet"></div>
+        </div>
+        <!-- Porta direita do cofre -->
+        <div class="cofre-porta right-door">
+            <div class="door-handle"></div>
+            <!-- Rebites da porta direita -->
+            <div class="rivet"></div>
+            <div class="rivet"></div>
+            <div class="rivet"></div>
+            <div class="rivet"></div>
+            <!-- Mecanismo de trava com indicador de giro da chave -->
+            <div class="lock-mechanism">
+                <div class="keyhole"></div>
+                <div class="key-turn-indicator"></div>
+            </div>
+        </div>
+        <!-- Conteúdo secreto que será revelado (sua imagem PNG, moedas e XP) -->
+        <div class="conteudo-secreto">
+            <!-- Substitua 'sua-imagem.png' pelo caminho da sua imagem PNG.
+                 Certifique-se de que a imagem esteja na mesma pasta ou forneça o caminho completo. -->
+            <img src="Ferreiro-anão.gif" alt="Conteúdo Secreto">
+
+            <!-- Moedas de ouro dentro do cofre -->
+            <div class="coin"></div>
+            <div class="coin"></div>
+            <div class="coin"></div>
+            <div class="coin"></div>
+            <div class="coin"></div>
+
+            <!-- Bolinhas de XP brilhantes -->
+            <div class="xp-orb"></div>
+            <div class="xp-orb"></div>
+            <div class="xp-orb"></div>
+        </div>
+    </div>
+
+    <!-- Controles para a senha e botões -->
+    <div class="controles">
+        <input type="password" id="passwordInput" placeholder="Digite a senha">
+        <button id="entrarBtn">Entrar</button>
+        <button id="fecharBtn" style="display: none;">Fechar Cofre</button>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        // Aguarda o carregamento completo do DOM antes de executar o script
+        document.addEventListener('DOMContentLoaded', () => {
+            // Referências aos elementos do DOM
+            const cofreContainer = document.querySelector('.cofre-container');
+            const passwordInput = document.getElementById('passwordInput');
+            const entrarBtn = document.getElementById('entrarBtn');
+            const fecharBtn = document.getElementById('fecharBtn');
+            const messageElement = document.getElementById('message');
+            const keyTurnIndicator = document.querySelector('.key-turn-indicator'); // Elemento para o indicador de chave
+
+            // Define a senha correta
+            const correctPassword = '123'; // Você pode mudar esta senha
+
+            // Listener de evento para o botão "Entrar"
+            entrarBtn.addEventListener('click', () => {
+                const enteredPassword = passwordInput.value;
+
+                if (enteredPassword === correctPassword) {
+                    // Adiciona a rotação ao indicador de chave ANTES de abrir as portas
+                    keyTurnIndicator.style.transform = 'rotate(90deg)';
+
+                    // Pequeno atraso para a animação da chave antes de abrir as portas
+                    setTimeout(() => {
+                        cofreContainer.classList.add('open');
+                        messageElement.textContent = 'Cofre aberto!';
+                    }, 300); // 300ms de atraso para o giro da chave
+
+                    // Esconde o campo de senha e o botão "Entrar"
+                    passwordInput.style.display = 'none';
+                    entrarBtn.style.display = 'none';
+                    // Mostra o botão "Fechar Cofre"
+                    fecharBtn.style.display = 'block';
+
+                } else {
+                    // Se a senha estiver incorreta, exibe uma mensagem de erro
+                    messageElement.textContent = 'Senha incorreta. Tente novamente.';
+                    passwordInput.value = ''; // Limpa o campo de senha
+                }
+            });
+
+            // Listener de evento para o botão "Fechar Cofre"
+            fecharBtn.addEventListener('click', () => {
+                // Remove a classe 'open' para fechar o cofre
+                cofreContainer.classList.remove('open');
+                messageElement.textContent = 'Cofre fechado.';
+
+                // Remove a rotação do indicador de chave ao fechar
+                keyTurnIndicator.style.transform = 'rotate(0deg)';
+
+
+                // Esconde o botão "Fechar Cofre"
+                fecharBtn.style.display = 'none';
+                // Mostra o campo de senha e o botão "Entrar" novamente
+                passwordInput.style.display = 'block';
+                entrarBtn.style.display = 'block';
+                passwordInput.value = ''; // Garante que o campo de senha esteja limpo
+            });
+        });
+    </script>
+</body>
+</html>

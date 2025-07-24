@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquivos de Kuar-Tor - Terminal da Aliança</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter e Roboto Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos personalizados -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c0c0c;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+            color: #a1a1aa;
+        }
+        .font-roboto-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .scanlines::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(to bottom, rgba(18, 18, 18, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 5;
+            pointer-events: none;
+            animation: scanline-animation 10s linear infinite;
+        }
+        @keyframes scanline-animation {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 -200px; }
+        }
+        .glow-effect-red {
+            box-shadow: 0 0 8px rgba(220, 38, 38, 0.3), 0 0 12px rgba(220, 38, 38, 0.2);
+        }
+        .terminal-card {
+            background-color: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+        }
+        .map-pin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #dc2626;
+            border-radius: 50%;
+            border: 2px solid #fef2f2;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse-map-pin 2s infinite;
+        }
+        .map-pin:hover {
+            transform: scale(1.5);
+            animation-play-state: paused;
+        }
+        .map-pin.unknown {
+            background-color: #6b7280;
+            animation: pulse-map-pin-unknown 3s infinite;
+        }
+        @keyframes pulse-map-pin {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        @keyframes pulse-map-pin-unknown {
+            0% { box-shadow: 0 0 0 0 rgba(107, 114, 128, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(107, 114, 128, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(107, 114, 128, 0); }
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            top: 1rem;
+            left: -0.5rem;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #dc2626;
+            border: 4px solid #111827;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 scanlines">
+
+    <div class="w-full max-w-7xl mx-auto z-20 relative py-8">
+        <!-- Cabeçalho -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-red-600 font-roboto-mono tracking-wider">ARQUIVOS DE KUAR-TOR</h1>
+            <p class="text-lg text-gray-500">DADOS CORROMPIDOS // ACESSO PARCIAL</p>
+        </header>
+
+        <!-- Conteúdo Principal -->
+        <main class="space-y-12">
+
+            <!-- Módulo 1: Mapa Interativo -->
+            <section id="mapa" class="terminal-card rounded-lg p-6">
+                <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">Cartografia Corrompida</h2>
+                <div class="relative w-full max-w-4xl mx-auto">
+                    <!-- Substitua o src da imagem pelo URL do seu mapa -->
+                    <img src="https://placehold.co/1200x800/1f2937/7f1d1d?text=Mapa+de+Kuar-Tor" alt="Mapa da ilha de Kuar-Tor" class="w-full h-auto rounded-md opacity-75">
+                    
+                    <!-- Pinos Clicáveis -->
+                    <!-- As posições (top, left) são em porcentagem para se adaptar ao tamanho da imagem -->
+                    <div class="map-pin" style="top: 75%; left: 60%;" data-location="cidade-vidro"></div>
+                    <div class="map-pin" style="top: 40%; left: 35%;" data-location="lodacal-sussurrante"></div>
+                    <div class="map-pin" style="top: 25%; left: 70%;" data-location="biblioteca-invertida"></div>
+                    <div class="map-pin unknown" style="top: 55%; left: 80%;" data-location="sinal-desconhecido"></div>
+                </div>
+            </section>
+
+            <!-- Módulo 2: Linha do Tempo -->
+            <section id="timeline" class="terminal-card rounded-lg p-6">
+                <h2 class="text-2xl font-bold text-red-600 mb-6 border-b border-red-700/30 pb-2">Linha do Tempo dos Eventos</h2>
+                <div class="relative border-l-2 border-red-800/50 ml-4 space-y-8">
+                    <div class="timeline-item pl-8">
+                        <h3 class="font-roboto-mono text-lg text-red-500">Ano -127: O Cataclismo</h3>
+                        <p class="text-gray-400">Um evento arcano de escala massiva cria uma fenda para o Vazio. Kuar-Tor, antes um paraíso, é transformado em um pesadelo. A Aliança de Extermínio é formada em resposta, resgatando os poucos sobreviventes.</p>
+                    </div>
+                    <div class="timeline-item pl-8">
+                        <h3 class="font-roboto-mono text-lg text-red-500">Ano -94: A Primeira Expedição</h3>
+                        <p class="text-gray-400">A Aliança lança sua primeira tentativa de reconquista. A expedição estabelece um posto avançado, mas é completamente aniquilada por uma força desconhecida. O contato é perdido.</p>
+                    </div>
+                    <div class="timeline-item pl-8">
+                        <h3 class="font-roboto-mono text-lg text-red-500">Ano -38: A Segunda Expedição</h3>
+                        <p class="text-gray-400">Uma força mais bem equipada tenta uma nova incursão. Sofrem baixas massivas, mas conseguem extrair dados cruciais sobre a natureza instável da ilha antes de baterem em retirada. O Sargento Kaelen "Mão de Pedra" é um dos poucos sobreviventes.</p>
+                    </div>
+                    <div class="timeline-item pl-8">
+                        <h3 class="font-roboto-mono text-lg text-red-500">Ano 0: A Terceira Expedição (Atual)</h3>
+                        <p class="text-gray-400">Com recursos escassos e pouca esperança, a Aliança recruta párias, criminosos e heróis caídos para uma última e desesperada missão: fechar a fenda de Kuar-Tor, custe o que custar.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Módulo 3: Dossiês -->
+            <section id="dossiers" class="terminal-card rounded-lg p-6">
+                <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">Dossiês de Inteligência</h2>
+                <div>
+                    <!-- Abas de Navegação -->
+                    <div class="border-b border-gray-700">
+                        <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                            <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-red-600 text-red-500" data-tab="faccao-alianca">Aliança de Extermínio</button>
+                            <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-500" data-tab="faccao-culto">Culto do Vazio</button>
+                            <button class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-500" data-tab="npcs">Pessoal de Interesse</button>
+                        </nav>
+                    </div>
+                    <!-- Conteúdo das Abas -->
+                    <div class="pt-6">
+                        <div class="tab-content" id="faccao-alianca">
+                            <h3 class="text-xl font-semibold text-gray-200">Aliança de Extermínio</h3>
+                            <p class="mt-2 text-gray-400"><strong class="text-red-400">Objetivo Público:</strong> Fechar a fenda de Kuar-Tor e purificar a ilha da influência do Vazio, restaurando-a como um bastião seguro para a humanidade.</p>
+                            <p class="mt-2 text-gray-400"><strong class="text-red-400">Estrutura:</strong> Uma coalizão militar desesperada, composta por diversas nações e guildas, liderada por um conselho de comandantes veteranos. Utiliza recrutas descartáveis para missões de alto risco.</p>
+                            <p class="mt-2 text-gray-400"><strong class="text-red-400">Objetivo Secreto [NÍVEL DE ACESSO 5]:</strong> <span class="bg-gray-700 text-gray-700 hover:bg-transparent hover:text-red-500 transition-colors cursor-pointer">Estudos indicam que a energia da fenda pode ser estabilizada e transformada em uma fonte de poder sem precedentes. O Protocolo Quimera visa a contenção e armamento da fenda, não sua destruição.</span></p>
+                        </div>
+                        <div class="tab-content hidden" id="faccao-culto">
+                            <h3 class="text-xl font-semibold text-gray-200">Culto do Vazio Silencioso</h3>
+                            <p class="mt-2 text-gray-400"><strong class="text-red-400">Doutrina:</strong> Acreditam que o "Cataclismo" foi uma "Ascensão". O Vazio não é um destruidor, mas um purificador que oferece a verdadeira forma da existência. Adoram as entidades da fenda e buscam expandir sua influência.</p>
+                            <p class="mt-2 text-gray-400"><strong class="text-red-400">Líder:</strong> Conhecido apenas como "O Profeta dos Ecos", um indivíduo que supostamente sobreviveu ao cataclismo original. Possui habilidades psíquicas potentes e carisma perturbador.</p>
+                            <p class="mt-2 text-gray-400"><strong class="text-red-400">Atividades:</strong> Realizam rituais em locais de grande poder arcano para enfraquecer o véu entre as dimensões. Sabotam ativamente as operações da Aliança, vendo-os como hereges que tentam aprisionar seu "deus".</p>
+                        </div>
+                        <div class="tab-content hidden" id="npcs">
+                            <div class="space-y-4">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-200">Sargento Kaelen "Mão de Pedra"</h3>
+                                    <p class="mt-1 text-gray-400">Veterano da Segunda Expedição. Cínico, brutalmente pragmático e desconfiado de todos. Perdeu todo seu esquadrão na última incursão e culpa o comando da Aliança. Seu conhecimento prático da ilha e das táticas das criaturas é sua única qualidade redentora. Carrega um peso visível em seus ombros.</p>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-200">Elara, a Escriba Amnésica</h3>
+                                    <p class="mt-1 text-gray-400">Encontrada em estado catatônico perto de um monólito coberto de runas. Não possui memórias, mas em momentos de estresse, desenha padrões complexos e mapas de locais que não deveriam existir. Parece ter uma conexão inexplicável com a ilha, para o bem ou para o mal. A Aliança a mantém sob vigilância constante.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal do Mapa -->
+    <div id="mapModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="terminal-card rounded-lg p-6 w-11/12 max-w-2xl relative glow-effect-red">
+            <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <h2 id="modalTitle" class="text-2xl font-bold text-red-500 mb-4"></h2>
+            <!-- Imagem do local -->
+            <img id="modalImage" src="" alt="Imagem do Local" class="w-full h-64 object-cover rounded-md mb-4 opacity-80">
+            <p id="modalDescription" class="text-gray-300"></p>
+        </div>
+    </div>
+
+    <script>
+        // --- SCRIPT PARA INTERATIVIDADE ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Lógica do Mapa Interativo ---
+            const pins = document.querySelectorAll('.map-pin');
+            const modal = document.getElementById('mapModal');
+            const closeModalBtn = document.getElementById('closeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalImage = document.getElementById('modalImage');
+            const modalDescription = document.getElementById('modalDescription');
+
+            // Dados dos locais. Adicione mais locais aqui.
+            const locations = {
+                'cidade-vidro': {
+                    title: 'Cidade de Vidro',
+                    image: 'https://placehold.co/600x400/000000/dc2626?text=Cidade+de+Vidro',
+                    description: 'A antiga capital de Kuar-Tor, agora uma necrópole silenciosa coberta por uma camada de vidro obsidiano. Os reflexos nas superfícies não mostram o que está lá, mas sim vislumbres fugazes do Vazio. À noite, dizem que os reflexos ganham vida.'
+                },
+                'lodacal-sussurrante': {
+                    title: 'Lodaçal Sussurrante',
+                    image: 'https://placehold.co/600x400/000000/dc2626?text=Lodaçal+Sussurrante',
+                    description: 'Um pântano onde a água foi substituída por um lodo preto e pulsante. Bolhas de gás metano sobem à superfície, estourando com sussurros que erodem a sanidade. Os corpos daqueles que caem aqui são reanimados como marionetes grotescas.'
+                },
+                'biblioteca-invertida': {
+                    title: 'A Grande Biblioteca Invertida',
+                    image: 'https://placehold.co/600x400/000000/dc2626?text=Biblioteca+Invertida',
+                    description: 'Um bastião do conhecimento virado de cabeça para baixo pela distorção espacial. Para atravessá-la, é preciso andar no teto. Tomos e pergaminhos flutuam como poeira, e seu conteúdo pode conceder poder ou destruir a mente do leitor.'
+                },
+                'sinal-desconhecido': {
+                    title: 'Sinal de Energia Desconhecido',
+                    image: 'https://placehold.co/600x400/000000/dc2626?text=???',
+                    description: 'Os sensores da Aliança detectaram uma emissão de energia anômala nesta região, mas as sondas enviadas perderam o contato. A área é considerada extremamente perigosa e inexplorada.'
+                }
+            };
+
+            pins.forEach(pin => {
+                pin.addEventListener('click', () => {
+                    const locationId = pin.dataset.location;
+                    const data = locations[locationId];
+                    
+                    if (data) {
+                        modalTitle.textContent = data.title;
+                        modalImage.src = data.image;
+                        modalDescription.textContent = data.description;
+                        modal.classList.remove('hidden');
+                        modal.classList.add('flex');
+                    }
+                });
+            });
+
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+
+            closeModalBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // --- Lógica das Abas do Dossiê ---
+            const tabs = document.querySelectorAll('.tab-btn');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Desativa todas as abas e conteúdos
+                    tabs.forEach(item => {
+                        item.classList.remove('border-red-600', 'text-red-500');
+                        item.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-300', 'hover:border-gray-500');
+                    });
+                    contents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+
+                    // Ativa a aba clicada
+                    tab.classList.add('border-red-600', 'text-red-500');
+                    tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-300', 'hover:border-gray-500');
+                    document.getElementById(tab.dataset.tab).classList.remove('hidden');
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
