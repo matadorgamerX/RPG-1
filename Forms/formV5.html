@@ -705,7 +705,7 @@
             const sheetIdToSave = currentSheetId || Date.now().toString();
             const sheetData = getFormAsJson();
             
-            const sheetDocRef = doc(db, `/artifacts/${appId}/users/${currentUserId}/sheets`, sheetIdToSave);
+            const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetIdToSave);
             
             try {
                 await setDoc(sheetDocRef, {
