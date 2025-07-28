@@ -325,26 +325,9 @@
         import { getFirestore, collection, doc, onSnapshot, setDoc, getDoc, deleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE ---
-        // !!!!! IMPORTANTE !!!!!
-        // COLE AQUI O OBJETO DE CONFIGURAÇÃO DO SEU PROJETO FIREBASE
-        // Você o encontra em: Console do Firebase > Configurações do Projeto > Geral > Seus aplicativos > SDK do Firebase
-        const firebaseConfig = {
-            apiKey: "SUA_API_KEY",
-            authDomain: "SEU_AUTH_DOMAIN",
-            projectId: "SEU_PROJECT_ID",
-            storageBucket: "SEU_STORAGE_BUCKET",
-            messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-            appId: "SEU_APP_ID"
-        };
-        
-        // Validação simples para garantir que a configuração foi alterada
-        if (firebaseConfig.apiKey === "SUA_API_KEY") {
-            const errorMsg = "CONFIGURAÇÃO DO FIREBASE NECESSÁRIA! Edite o código e cole sua 'firebaseConfig' para que o aplicativo funcione.";
-            document.body.innerHTML = `<div style="padding: 2rem; text-align: center; font-size: 1.2rem; color: #f87171; background-color: #1f2937; height: 100vh; display: flex; align-items: center; justify-content: center;">${errorMsg}</div>`;
-            throw new Error(errorMsg);
-        }
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-sheet-app';
 
-        const appId = firebaseConfig.projectId;
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -366,8 +349,11 @@
                 authStatusEl.textContent = "Autenticando...";
                 console.log("Nenhum usuário logado. Tentando login anônimo.");
                 try {
-                    // O login com token customizado foi removido pois não se aplica a este cenário de uso geral
-                    await signInAnonymously(auth);
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
                 } catch (error) {
                     console.error("Erro na autenticação:", error);
                     authStatusEl.textContent = "Falha na conexão com os servidores.";
