@@ -325,8 +325,15 @@
         import { getFirestore, collection, doc, onSnapshot, setDoc, getDoc, deleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE ---
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-sheet-app';
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
+            authDomain: "kuar-tor-portal.firebaseapp.com",
+            projectId: "kuar-tor-portal",
+            storageBucket: "kuar-tor-portal.firebasestorage.app",
+            messagingSenderId: "438781244189",
+            appId: "1:438781244189:web:99ea6a25fc459b14f567f4",
+            measurementId: "G-X5GTEY10VZ"
+            };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
