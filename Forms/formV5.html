@@ -705,7 +705,7 @@
             const sheetIdToSave = currentSheetId || Date.now().toString();
             const sheetData = getFormAsJson();
             
-            const sheetDocRef = doc(db, `/artifacts/${appId}/users/${currentUserId}/sheets`, sheetIdToSave);
+            const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetIdToSave);
             
             try {
                 await setDoc(sheetDocRef, {
@@ -728,7 +728,7 @@
                 unsubscribeFromSheets();
             }
             
-            const sheetsCollectionRef = collection(db, `/artifacts/${appId}/users/${currentUserId}/sheets`);
+            const sheetsCollectionRef = collection(db, `users/${currentUserId}/characters`);
             const q = query(sheetsCollectionRef);
 
             unsubscribeFromSheets = onSnapshot(q, (snapshot) => {
@@ -754,7 +754,9 @@
 
         async function loadSheetFromFirestore(sheetId) {
             if (!currentUserId || !sheetId) return;
-            const sheetDocRef = doc(db, `/artifacts/${appId}/users/${currentUserId}/sheets`, sheetId);
+            // Correção para a Linha 757
+            const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
+
             try {
                 const docSnap = await getDoc(sheetDocRef);
                 if (docSnap.exists()) {
@@ -773,7 +775,8 @@
         async function deleteSheetFromFirestore(sheetId) {
             if (!currentUserId || !sheetId) return;
             if (confirm('Tem certeza que deseja excluir esta ficha da nuvem? Esta ação não pode ser desfeita.')) {
-                const sheetDocRef = doc(db, `/artifacts/${appId}/users/${currentUserId}/sheets`, sheetId);
+                // Correção para a Linha 776
+                const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
                 try {
                     await deleteDoc(sheetDocRef);
                     console.log(`Ficha ${sheetId} excluída.`);
