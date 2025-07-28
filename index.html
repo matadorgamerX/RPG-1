@@ -79,9 +79,19 @@
 <body class="flex items-center justify-center min-h-screen p-4">
 
     <div class="main-container w-full max-w-5xl p-8 rounded-xl shadow-2xl border border-gray-800">
-        <header class="text-center mb-10">
-            <h1 class="text-5xl md:text-6xl font-bold text-red-500" style="text-shadow: 0 0 10px rgba(153, 27, 27, 0.7);">Portal de Kuar-Tor</h1>
-            <p class="text-xl text-gray-300 mt-2">Recursos para a campanha "A Última Expedição"</p>
+        <header class="flex justify-between items-center mb-10">
+            <div class="flex-1"></div>
+            <div class="flex-1 text-center">
+                <h1 class="text-5xl md:text-6xl font-bold text-red-500" style="text-shadow: 0 0 10px rgba(153, 27, 27, 0.7);">Portal de Kuar-Tor</h1>
+                <p class="text-xl text-gray-300 mt-2">Recursos para a campanha "A Última Expedição"</p>
+            </div>
+            <div class="flex-1 flex justify-end" id="user-session">
+                <a href="login.html" id="login-link" class="btn-theme bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-md">Login</a>
+                <div id="user-info" class="hidden items-center">
+                    <span id="user-email" class="text-white mr-4"></span>
+                    <button id="logout-button" class="btn-theme bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md">Logout</button>
+                </div>
+            </div>
         </header>
 
         <main class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -120,6 +130,8 @@
             <p class="text-gray-500 text-sm">São Carlos, SP, Brasil | Domingo, 8 de junho de 2025</p>
         </footer>
     </div>
-
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="auth.js"></script>
 </body>
 </html>
