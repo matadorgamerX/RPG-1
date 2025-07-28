@@ -3,10 +3,10 @@ const firebaseConfig = {
     apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
     authDomain: "kuar-tor-portal.firebaseapp.com",
     projectId: "kuar-tor-portal",
-    storageBucket: "kuar-tor-portal.appspot.com", // Corrected storageBucket name
+    storageBucket: "kuar-tor-portal.firebasestorage.app",
     messagingSenderId: "438781244189",
-    appId: "1:438781244189:web:99ea6a25fc459b14f567f4"
-    // measurementId is not needed for Auth
+    appId: "1:438781244189:web:99ea6a25fc459b14f567f4",
+    measurementId: "G-X5GTEY10VZ"
 };
 
 firebase.initializeApp(firebaseConfig);
