@@ -41,10 +41,23 @@
         @keyframes scanline-animation { 0% { background-position: 0 0; } 100% { background-position: 0 -200px; } }
         .glow-effect-red { box-shadow: 0 0 8px rgba(220, 38, 38, 0.3), 0 0 12px rgba(220, 38, 38, 0.2); }
         .terminal-card { background-color: rgba(10, 10, 10, 0.7); backdrop-filter: blur(5px); border: 1px solid rgba(220, 38, 38, 0.2); }
-        .pulsate-red { animation: pulsate-red 2.5s infinite; }
-        @keyframes pulsate-red { 0% { text-shadow: 0 0 4px rgba(220, 38, 38, 0.6); } 50% { text-shadow: 0 0 25px rgba(220, 38, 38, 1); } 100% { text-shadow: 0 0 4px rgba(220, 38, 38, 0.6); } }
-        .selected-mission, .selected-character { background-color: rgba(220, 38, 38, 0.4); border: 1px solid rgba(220, 38, 38, 0.8); }
         #main-content { display: none; }
+        .mission-roster h4 {
+            font-family: 'Cinzel', serif;
+            color: #fca5a5;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #4b5563;
+            padding-bottom: 0.25rem;
+        }
+        .roster-entry {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            padding: 0.25rem 0;
+        }
+        .roster-character { font-weight: 600; color: #e5e7eb; }
+        .roster-user { font-style: italic; color: #9ca3af; font-size: 0.8rem; }
     </style>
 </head>
 <body class="min-h-screen p-4 scanlines">
@@ -54,8 +67,8 @@
         <div class="terminal-card rounded-lg p-6 glow-effect-red">
             <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">ACESSO RESTRITO</h2>
             <div class="space-y-4">
-                <input type="email" id="email" placeholder="Email" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                <input type="password" id="password" placeholder="Password" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <input type="email" id="email" placeholder="Email do Operativo" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <input type="password" id="password" placeholder="Senha de Acesso" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
                 <button id="login-button" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-4 rounded transition-colors duration-300">ENTRAR</button>
             </div>
             <p id="login-error" class="text-red-500 mt-4"></p>
@@ -67,53 +80,39 @@
             <div></div>
             <div>
                 <h1 class="text-4xl md:text-5xl font-bold text-red-600 font-roboto-mono tracking-wider animate-pulse">TERMINAL DA ALIANÇA</h1>
-                <p class="text-lg text-gray-500">CONEXÃO ESTABELECIDA // PROTOCOLO QUIMERA</p>
+                <p id="user-display" class="text-lg text-gray-500">CONEXÃO ESTABELECIDA</p>
             </div>
             <button id="logout-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">SAIR</button>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 space-y-6">
-                <section class="terminal-card rounded-lg p-6 glow-effect-red">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">DIRETIVAS DE EMERGÊNCIA</h2>
-                    <div class="space-y-4 text-gray-400">
-                        <article>
-                            <h3 class="font-semibold text-red-500">ORDEM DE MOBILIZAÇÃO FINAL</h3>
-                            <p>A partida do 'Arauto do Amanhecer' é inevitável. As estimativas de baixas para a fase inicial da missão foram reavaliadas para 85%.</p>
-                        </article>
-                    </div>
-                </section>
-                <section class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">DEBRIEFING DA ÚLTIMA PATRULHA</h2>
-                    <p class="text-gray-400">A incursão ao posto avançado foi um sucesso pírrico. O diário do Capitão Valerius foi recuperado... as páginas falam de sombras que sangram e de uma geometria que grita.</p>
-                </section>
-            </div>
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Coluna da Esquerda: Inscrição -->
             <div class="space-y-6">
-                <section class="terminal-card rounded-lg p-6 text-center">
-                    <h2 class="text-xl font-bold text-red-600 mb-4">TEMPO RESTANTE:</h2>
-                    <div id="countdown" class="flex justify-center space-x-2 md:space-x-4">
-                        <div><span id="days" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span><span class="block text-xs text-gray-500">DIAS</span></div>
-                        <div><span id="hours" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span><span class="block text-xs text-gray-500">HORAS</span></div>
-                        <div><span id="minutes" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span><span class="block text-xs text-gray-500">MIN</span></div>
-                        <div><span id="seconds" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span><span class="block text-xs text-gray-500">SEG</span></div>
-                    </div>
-                </section>
-                <section class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">MISSÕES ATIVAS</h2>
-                    <div class="space-y-3" id="mission-list"></div>
-                </section>
-                <section class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">SELEÇÃO DE MISSÃO E AGENTES</h2>
+                <section class="terminal-card rounded-lg p-6 glow-effect-red">
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">INSCREVER-SE NA MISSÃO</h2>
                     <div class="space-y-4">
                         <div>
-                            <p class="text-gray-400 mb-2">Missão Selecionada:</p>
-                            <p id="selected-mission-display" class="font-bold text-red-500 text-lg">Nenhuma</p>
+                            <label for="mission-select" class="block text-sm font-medium mb-1">Selecione a Missão:</label>
+                            <select id="mission-select" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></select>
                         </div>
                         <div>
-                            <p class="text-gray-400 mb-2">Selecione seu Agente:</p>
-                            <div id="character-list" class="grid grid-cols-2 gap-3"></div>
+                            <label for="character-name-input" class="block text-sm font-medium mb-1">Nome do Personagem:</label>
+                            <input type="text" id="character-name-input" placeholder="Digite o nome do seu personagem" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md">
                         </div>
-                        <button id="confirm-mission-button" class="mt-4 w-full bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors duration-300 opacity-50 cursor-not-allowed" disabled>CONFIRMAR MISSÃO</button>
+                        <button id="confirm-signup-button" class="mt-4 w-full bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors duration-300">CONFIRMAR INSCRIÇÃO</button>
+                    </div>
+                </section>
+                <section class="terminal-card rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">DIRETIVAS DE EMERGÊNCIA</h2>
+                    <p class="text-gray-400">A partida do 'Arauto do Amanhecer' é inevitável. As estimativas de baixas para a fase inicial foram reavaliadas para 85%. Não esperem por reforços.</p>
+                </section>
+            </div>
+            <!-- Coluna da Direita: Painel de Inscritos -->
+            <div class="space-y-6">
+                 <section class="terminal-card rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">INSCRITOS NA EXPEDIÇÃO</h2>
+                    <div id="mission-roster" class="mission-roster">
+                        <p class="text-center text-gray-500">Aguardando dados...</p>
                     </div>
                 </section>
             </div>
@@ -121,9 +120,6 @@
     </div>
 
     <script>
-        // --- All JavaScript is now embedded in this file ---
-
-        // 1. FIREBASE INITIALIZATION
         const firebaseConfig = {
             apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
             authDomain: "kuar-tor-portal.firebaseapp.com",
@@ -140,7 +136,6 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // 2. TERMINAL LOGIC
         document.addEventListener('DOMContentLoaded', () => {
             const loginSection = document.getElementById('login-section');
             const mainContent = document.getElementById('main-content');
@@ -149,15 +144,14 @@
             const emailInput = document.getElementById('email');
             const passwordInput = document.getElementById('password');
             const loginError = document.getElementById('login-error');
-            const missionListDiv = document.getElementById('mission-list');
-            const selectedMissionDisplay = document.getElementById('selected-mission-display');
-            const characterListDiv = document.getElementById('character-list');
-            const confirmMissionButton = document.getElementById('confirm-mission-button');
+            const userDisplay = document.getElementById('user-display');
+            
+            const missionSelect = document.getElementById('mission-select');
+            const characterNameInput = document.getElementById('character-name-input');
+            const confirmSignupButton = document.getElementById('confirm-signup-button');
+            const missionRosterDiv = document.getElementById('mission-roster');
 
             let missions = [];
-            let characters = [];
-            let selectedMission = null;
-            let selectedCharacter = null;
             let currentUser = null;
 
             auth.onAuthStateChanged(user => {
@@ -165,7 +159,9 @@
                     currentUser = user;
                     loginSection.style.display = 'none';
                     mainContent.style.display = 'block';
-                    fetchMissionsAndCharacters(); // Directly fetch data on login
+                    userDisplay.textContent = `Operativo Conectado: ${user.email}`;
+                    loadMissions();
+                    listenForSignups();
                 } else {
                     currentUser = null;
                     mainContent.style.display = 'none';
@@ -176,163 +172,89 @@
             loginButton.addEventListener('click', () => {
                 const email = emailInput.value;
                 const password = passwordInput.value;
-                loginError.textContent = ''; // Clear previous errors
+                loginError.textContent = '';
                 auth.signInWithEmailAndPassword(email, password)
                     .catch(error => {
-                        loginError.textContent = error.message;
+                        loginError.textContent = "Credenciais inválidas. Tente novamente.";
                     });
             });
 
             logoutButton.addEventListener('click', () => {
                 auth.signOut();
             });
-
-            async function fetchMissionsAndCharacters() {
+            
+            async function loadMissions() {
                 try {
-                    // Fetch missions
                     const missionsSnapshot = await db.collection('missions').get();
                     missions = missionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                    // Fetch user's characters
-                    const charactersSnapshot = await db.collection('personagens').where('userId', '==', currentUser.uid).get();
-                    characters = charactersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     
-                    // Fetch mission assignments
-                    const assignmentsSnapshot = await db.collection('mission_assignments').get();
-                    const assignments = assignmentsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    missionSelect.innerHTML = missions.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+                } catch (err) {
+                    console.error("Error loading missions: ", err);
+                }
+            }
 
-                    missions.forEach(m => m.assignedCharacter = null);
-                    characters.forEach(c => c.assignedMission = null);
+            confirmSignupButton.addEventListener('click', async () => {
+                const selectedMissionId = missionSelect.value;
+                const characterName = characterNameInput.value.trim();
+                const selectedMission = missions.find(m => m.id === selectedMissionId);
 
-                    assignments.forEach(assignment => {
-                        const mission = missions.find(m => m.id === assignment.missionId);
-                        const character = characters.find(c => c.id === assignment.characterId);
-                        if(mission) mission.assignedCharacter = assignment.characterId;
-                        if(character) character.assignedMission = assignment.missionId;
+                if (!selectedMissionId || !characterName) {
+                    alert("Por favor, selecione uma missão e digite o nome do seu personagem.");
+                    return;
+                }
+
+                try {
+                    await db.collection('mission_signups').add({
+                        missionId: selectedMissionId,
+                        missionName: selectedMission.name,
+                        characterName: characterName,
+                        userId: currentUser.uid,
+                        userEmail: currentUser.email,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    alert(`Personagem "${characterName}" inscrito na missão "${selectedMission.name}" com sucesso!`);
+                    characterNameInput.value = '';
+                } catch (error) {
+                    console.error("Error signing up: ", error);
+                    alert("Falha ao se inscrever. Verifique suas permissões ou tente novamente.");
+                }
+            });
+
+            function listenForSignups() {
+                db.collection('mission_signups').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
+                    const signupsByMission = {};
+
+                    snapshot.docs.forEach(doc => {
+                        const signup = doc.data();
+                        if (!signupsByMission[signup.missionName]) {
+                            signupsByMission[signup.missionName] = [];
+                        }
+                        signupsByMission[signup.missionName].push(signup);
                     });
 
-                    renderMissions();
-                    renderCharacters();
-                } catch (err) {
-                    console.error("Error fetching data: ", err);
-                    loginError.textContent = "Error fetching data from server: " + err.message;
-                }
-            }
-
-            function renderMissions() {
-                missionListDiv.innerHTML = '';
-                missions.forEach(mission => {
-                    const missionLink = document.createElement('a');
-                    missionLink.href = "#";
-                    let classList = "mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold";
-                    if (selectedMission && selectedMission.id === mission.id) classList += ' selected-mission';
-                    missionLink.className = classList;
-                    missionLink.dataset.missionId = mission.id;
-                    missionLink.textContent = mission.name;
-                    
-                    if (mission.assignedCharacter) {
-                        missionLink.classList.add('opacity-50', 'cursor-not-allowed');
-                    } else {
-                        missionLink.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            selectMission(mission.id);
-                        });
-                    }
-                    missionListDiv.appendChild(missionLink);
+                    renderRoster(signupsByMission);
                 });
             }
 
-            function renderCharacters() {
-                characterListDiv.innerHTML = '';
-                characters.forEach(character => {
-                    const characterCard = document.createElement('div');
-                     let classList = "character-item bg-gray-900 hover:bg-gray-800 text-white p-3 rounded-md cursor-pointer text-center";
-                    if(selectedCharacter && selectedCharacter.id === character.id) classList += ' selected-character';
-                    characterCard.className = classList;
-                    characterCard.dataset.characterId = character.id;
-                    characterCard.textContent = character.nome;
-                    if (character.assignedMission) {
-                        characterCard.classList.add('opacity-50', 'cursor-not-allowed');
-                    } else {
-                        characterCard.addEventListener('click', () => {
-                            selectCharacter(character.id);
-                        });
-                    }
-                    characterListDiv.appendChild(characterCard);
-                });
-            }
-
-            function selectMission(missionId) {
-                selectedMission = missions.find(m => m.id === missionId);
-                selectedMissionDisplay.textContent = selectedMission ? selectedMission.name : 'Nenhuma';
-                renderMissions();
-                updateConfirmButtonState();
-            }
-
-            function selectCharacter(characterId) {
-                selectedCharacter = characters.find(c => c.id === characterId);
-                renderCharacters();
-                updateConfirmButtonState();
-            }
-
-            function updateConfirmButtonState() {
-                if (selectedMission && selectedCharacter && !selectedMission.assignedCharacter && !selectedCharacter.assignedMission) {
-                    confirmMissionButton.disabled = false;
-                    confirmMissionButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else {
-                    confirmMissionButton.disabled = true;
-                    confirmMissionButton.classList.add('opacity-50', 'cursor-not-allowed');
+            function renderRoster(signupsByMission) {
+                if (Object.keys(signupsByMission).length === 0) {
+                    missionRosterDiv.innerHTML = '<p class="text-center text-gray-500">Nenhum operativo inscrito ainda.</p>';
+                    return;
                 }
-            }
 
-            async function confirmMission() {
-                if (selectedMission && selectedCharacter) {
-                    confirmMissionButton.disabled = true; // Prevent double clicks
-                    try {
-                        await db.collection('mission_assignments').add({
-                            missionId: selectedMission.id,
-                            characterId: selectedCharacter.id,
-                            userId: currentUser.uid,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        alert(`Missão "${selectedMission.name}" confirmada com o Agente "${selectedCharacter.nome}"!`);
-                        selectedMission = null;
-                        selectedCharacter = null;
-                        selectedMissionDisplay.textContent = 'Nenhuma';
-                        fetchMissionsAndCharacters();
-                    } catch (error) {
-                        console.error("Error confirming mission: ", error);
-                        alert("Falha ao confirmar a missão. Tente novamente.");
-                    } finally {
-                        updateConfirmButtonState();
-                    }
-                } else {
-                    alert('Por favor, selecione uma missão e um agente.');
+                let rosterHtml = '';
+                for (const missionName in signupsByMission) {
+                    rosterHtml += `<h4>${missionName}</h4>`;
+                    rosterHtml += signupsByMission[missionName].map(signup => `
+                        <div class="roster-entry">
+                            <span class="roster-character">${signup.characterName}</span>
+                            <span class="roster-user">${signup.userEmail}</span>
+                        </div>
+                    `).join('');
                 }
+                missionRosterDiv.innerHTML = rosterHtml;
             }
-            confirmMissionButton.addEventListener('click', confirmMission);
-            
-            // --- COUNTDOWN SCRIPT ---
-            const countdownDate = new Date('July 18, 2025 20:00:00').getTime();
-            const countdownFunction = setInterval(() => {
-                const now = new Date().getTime();
-                const distance = countdownDate - now;
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                const formatTime = (time) => time < 10 ? `0\${time}` : time;
-                if(document.getElementById('days')) {
-                    document.getElementById('days').innerText = formatTime(days);
-                    document.getElementById('hours').innerText = formatTime(hours);
-                    document.getElementById('minutes').innerText = formatTime(minutes);
-                    document.getElementById('seconds').innerText = formatTime(seconds);
-                }
-                if (distance < 0) {
-                    clearInterval(countdownFunction);
-                    if(document.getElementById('countdown')) document.getElementById('countdown').innerHTML = '<span class="text-2xl md:text-3xl font-bold text-red-500 pulsate-red">A HORA CHEGOU. SEM VOLTA.</span>';
-                }
-            }, 1000);
         });
     </script>
 </body>
