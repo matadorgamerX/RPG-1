@@ -159,13 +159,34 @@
             let selectedMission = null;
             let selectedCharacter = null;
             let currentUser = null;
+            
+            // --- Helper function to add missions if they don't exist ---
+            async function initializeMissions() {
+                const missionNames = ["Portirus", "Chegada em Portirus", "Expedição para Vento Ardente"];
+                const missionsCol = db.collection('missions');
+                
+                const existingMissionsSnapshot = await missionsCol.get();
+                const existingMissionNames = existingMissionsSnapshot.docs.map(doc => doc.data().name);
+
+                for (const name of missionNames) {
+                    if (!existingMissionNames.includes(name)) {
+                        try {
+                            await missionsCol.add({ name: name });
+                            console.log(`Mission "${name}" added to Firestore.`);
+                        } catch (error) {
+                            console.error(`Error adding mission "${name}":`, error);
+                        }
+                    }
+                }
+            }
+
 
             auth.onAuthStateChanged(user => {
                 if (user) {
                     currentUser = user;
                     loginSection.style.display = 'none';
                     mainContent.style.display = 'block';
-                    fetchMissionsAndCharacters();
+                    initializeMissions().then(fetchMissionsAndCharacters);
                 } else {
                     currentUser = null;
                     mainContent.style.display = 'none';
