@@ -14,6 +14,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
     <!-- Estilos personalizados -->
     <style>
         body {
@@ -21,15 +26,13 @@
             background-color: #0c0c0c; /* Fundo quase preto */
             background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
             color: #a1a1aa; /* Texto cinza neutro */
-            /* A propriedade 'overflow: hidden' foi removida para permitir a rolagem */
         }
         .font-roboto-mono {
             font-family: 'Roboto Mono', monospace;
         }
-        /* Efeito de vinheta para escurecer as bordas */
         body::after {
             content: '';
-            position: fixed; /* Mudei para 'fixed' para cobrir a viewport */
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -38,10 +41,9 @@
             pointer-events: none;
             z-index: 10;
         }
-        /* Efeito de scanlines para dar um ar de monitor antigo */
         .scanlines::before {
             content: '';
-            position: fixed; /* Mudei para 'fixed' para cobrir a viewport */
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -60,17 +62,14 @@
             0% { background-position: 0 0; }
             100% { background-position: 0 -200px; }
         }
-        /* Efeito de brilho vermelho */
         .glow-effect-red {
             box-shadow: 0 0 8px rgba(220, 38, 38, 0.3), 0 0 12px rgba(220, 38, 38, 0.2);
         }
-        /* Estilo dos cards */
         .terminal-card {
             background-color: rgba(10, 10, 10, 0.7);
             backdrop-filter: blur(5px);
             border: 1px solid rgba(220, 38, 38, 0.2);
         }
-        /* Animação de pulso vermelha */
         .pulsate-red {
             animation: pulsate-red 2.5s infinite;
         }
@@ -80,26 +79,43 @@
             100% { text-shadow: 0 0 4px rgba(220, 38, 38, 0.6); }
         }
         .selected-mission, .selected-character {
-            background-color: rgba(220, 38, 38, 0.4); /* Fundo vermelho mais claro para seleção */
-            border: 1px solid rgba(220, 38, 38, 0.8); /* Borda mais forte */
+            background-color: rgba(220, 38, 38, 0.4);
+            border: 1px solid rgba(220, 38, 38, 0.8);
         }
+        /* Hide content until logged in */
+        #main-content { display: none; }
     </style>
 </head>
 <body class="min-h-screen p-4 scanlines">
 
-    <div class="w-full max-w-7xl mx-auto z-20 relative py-8">
-        <!-- Cabeçalho -->
-        <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-red-600 font-roboto-mono tracking-wider animate-pulse">TERMINAL DA ALIANÇA</h1>
-            <p class="text-lg text-gray-500">CONEXÃO INSTÁVEL // PROTOCOLO QUIMERA</p>
+    <!-- Login Section -->
+    <div id="login-section" class="w-full max-w-md mx-auto z-20 relative py-8">
+        <div class="terminal-card rounded-lg p-6 glow-effect-red">
+            <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">ACESSO RESTRITO</h2>
+            <div class="space-y-4">
+                <input type="email" id="email" placeholder="Email" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <input type="password" id="password" placeholder="Password" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <button id="login-button" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-4 rounded transition-colors duration-300">ENTRAR</button>
+            </div>
+            <p id="login-error" class="text-red-500 mt-4"></p>
+        </div>
+    </div>
+    
+    <div id="main-content">
+        <header class="text-center mb-8 flex justify-between items-center">
+            <div></div>
+            <div>
+                <h1 class="text-4xl md:text-5xl font-bold text-red-600 font-roboto-mono tracking-wider animate-pulse">TERMINAL DA ALIANÇA</h1>
+                <p class="text-lg text-gray-500">CONEXÃO ESTABELECIDA // PROTOCOLO QUIMERA</p>
+            </div>
+            <button id="logout-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">SAIR</button>
         </header>
 
-        <!-- Grid Principal do Dashboard -->
+        <!-- Main Dashboard Grid -->
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            <!-- Coluna Esquerda (Avisos e Resumo) -->
+            <!-- Left Column -->
             <div class="lg:col-span-2 space-y-6">
-                <!-- Seção de Avisos -->
+                <!-- Emergency Directives -->
                 <section class="terminal-card rounded-lg p-6 glow-effect-red">
                     <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -110,79 +126,41 @@
                             <h3 class="font-semibold text-red-500">ORDEM DE MOBILIZAÇÃO FINAL</h3>
                             <p>A partida do 'Arauto do Amanhecer' é inevitável. As estimativas de baixas para a fase inicial da missão foram reavaliadas para 85%. Que seus deuses, se existirem, tenham piedade de suas almas.</p>
                         </article>
-                        <article>
-                            <h3 class="font-semibold text-red-500">RACIONAMENTO DE EMERGÊNCIA</h3>
-                            <p>Devido a uma "falha logística", os suprimentos médicos e de munição foram reduzidos. A ordem é clara: cada bala conta. Cada bandagem é um luxo. Não esperem por reforços.</p>
-                        </article>
-                         <article>
-                            <h3 class="font-semibold text-red-500">ALERTA DE CONTAMINAÇÃO PSÍQUICA</h3>
-                            <p>A exposição prolongada à ilha está causando degradação mental acelerada. Relatos de alucinações auditivas e paranoia estão se tornando comuns. Monitorem seus companheiros. Reportem qualquer desvio de comportamento. Eliminem a ameaça se necessário.</p>
-                        </article>
                     </div>
                 </section>
-
-                <!-- Seção de Resumo da Missão -->
+                <!-- Last Patrol Debriefing -->
                 <section class="terminal-card rounded-lg p-6">
                     <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
                         DEBRIEFING DA ÚLTIMA PATRULHA
                     </h2>
                     <p class="text-gray-400">
-                        A incursão ao posto avançado foi um sucesso pírrico. O diário do Capitão Valerius foi recuperado, mas seus escritos são o testamento de um homem louco. As páginas falam de sombras que sangram e de uma geometria que grita. A equipe Bravo perdeu o recruta Miller para "terrores noturnos" e o som que os persegue desde que voltaram não é de nenhuma criatura catalogada. É o som de unhas arranhando metal, vindo de dentro das paredes do próprio refúgio.
+                        A incursão ao posto avançado foi um sucesso pírrico. O diário do Capitão Valerius foi recuperado... as páginas falam de sombras que sangram e de uma geometria que grita.
                     </p>
                 </section>
             </div>
-
-            <!-- Coluna Direita (Contagem, Missões, Seleção e Links) -->
+            <!-- Right Column -->
             <div class="space-y-6">
-                <!-- Contagem Regressiva -->
+                <!-- Countdown -->
                 <section class="terminal-card rounded-lg p-6 text-center">
                     <h2 class="text-xl font-bold text-red-600 mb-4">TEMPO RESTANTE:</h2>
                     <div id="countdown" class="flex justify-center space-x-2 md:space-x-4">
-                        <div>
-                            <span id="days" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span>
-                            <span class="block text-xs text-gray-500">DIAS</span>
-                        </div>
-                        <div>
-                            <span id="hours" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span>
-                            <span class="block text-xs text-gray-500">HORAS</span>
-                        </div>
-                        <div>
-                            <span id="minutes" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span>
-                            <span class="block text-xs text-gray-500">MIN</span>
-                        </div>
-                        <div>
-                            <span id="seconds" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span>
-                            <span class="block text-xs text-gray-500">SEG</span>
-                        </div>
+                        <div><span id="days" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span><span class="block text-xs text-gray-500">DIAS</span></div>
+                        <div><span id="hours" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span><span class="block text-xs text-gray-500">HORAS</span></div>
+                        <div><span id="minutes" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span><span class="block text-xs text-gray-500">MIN</span></div>
+                        <div><span id="seconds" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span><span class="block text-xs text-gray-500">SEG</span></div>
                     </div>
                 </section>
 
-                <!-- Nova Seção: MISSÕES ATIVAS -->
+                <!-- Active Missions -->
                 <section class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v14l-12 3zm0 0l-6-1.5V5.5L9 7M12 4.5l6-1.5m-6 1.5V19m0-14H9m-6 1.5L9 7m-6 0l6-1.5M9 7L3 5.5" /></svg>
-                        MISSÕES ATIVAS
-                    </h2>
-                    <div class="space-y-3" id="mission-list">
-                        <a href="#" class="mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold" data-mission="INVASÃO EM PORTIRUS">
-                            INVASÃO EM PORTIRUS
-                        </a>
-                        <a href="#" class="mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold" data-mission="RECONSTRUÇÃO DA TORRE INFERNAL">
-                            RECONSTRUÇÃO DA TORRE INFERNAL
-                        </a>
-                        <a href="#" class="mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold" data-mission="EXPLORAÇÃO DA ZONA DE EXCLUSÃO">
-                            EXPLORAÇÃO DA ZONA DE EXCLUSÃO
-                        </a>
-                    </div>
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">MISSÕES ATIVAS</h2>
+                    <div class="space-y-3" id="mission-list"></div>
                 </section>
 
-                <!-- Nova Seção: SELEÇÃO DE MISSÃO E AGENTES -->
+                <!-- Mission and Agent Selection -->
                 <section class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zm3-4H6V9h2v8zm4 0h-2V9h2v8zm4 0h-2V9h2v8z" /></svg>
-                        SELEÇÃO DE MISSÃO E AGENTES
-                    </h2>
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">SELEÇÃO DE MISSÃO E AGENTES</h2>
                     <div class="space-y-4">
                         <div>
                             <p class="text-gray-400 mb-2">Missão Selecionada:</p>
@@ -190,43 +168,194 @@
                         </div>
                         <div>
                             <p class="text-gray-400 mb-2">Selecione seu Agente:</p>
-                            <div id="character-list" class="grid grid-cols-2 gap-3">
-                                <!-- Characters will be loaded here by JavaScript -->
-                            </div>
+                            <div id="character-list" class="grid grid-cols-2 gap-3"></div>
                         </div>
-                        <button id="confirm-mission-button" class="mt-4 w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-4 rounded transition-colors duration-300 opacity-50 cursor-not-allowed" disabled>
-                            CONFIRMAR MISSÃO
-                        </button>
+                        <button id="confirm-mission-button" class="mt-4 w-full bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors duration-300 opacity-50 cursor-not-allowed" disabled>CONFIRMAR MISSÃO</button>
                     </div>
                 </section>
-
-                <!-- Links Rápidos -->
-                <nav class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        REGISTOS DA MISSÃO
-                    </h2>
-                    <div class="space-y-3">
-                        <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
-                            Dossiês dos Agentes
-                        </a>
-                        <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
-                            Cartografia Corrompida
-                        </a>
-                        <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
-                            Diário de Bordo
-                        </a>
-                         <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
-                            Anatomia do Horror
-                        </a>
-                    </div>
-                </nav>
             </div>
         </main>
     </div>
 
-    <script>
-        // --- SCRIPT DA CONTAGEM REGRESSIVA ---
+    <script type="module">
+        import { firebaseConfig } from './firebase-config.js';
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // DOM elements
+        const loginSection = document.getElementById('login-section');
+        const mainContent = document.getElementById('main-content');
+        const loginButton = document.getElementById('login-button');
+        const logoutButton = document.getElementById('logout-button');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginError = document.getElementById('login-error');
+
+        const missionListDiv = document.getElementById('mission-list');
+        const selectedMissionDisplay = document.getElementById('selected-mission-display');
+        const characterListDiv = document.getElementById('character-list');
+        const confirmMissionButton = document.getElementById('confirm-mission-button');
+
+        // App state
+        let missions = [];
+        let characters = [];
+        let selectedMission = null;
+        let selectedCharacter = null;
+        let currentUser = null;
+        
+        // --- AUTHENTICATION ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                loginSection.style.display = 'none';
+                mainContent.style.display = 'block';
+                fetchMissionsAndCharacters();
+            } else {
+                currentUser = null;
+                mainContent.style.display = 'none';
+                loginSection.style.display = 'block';
+            }
+        });
+
+        loginButton.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(error => {
+                    loginError.textContent = error.message;
+                });
+        });
+
+        logoutButton.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // --- DATA FETCHING ---
+        async function fetchMissionsAndCharacters() {
+            // Fetch missions
+            const missionsSnapshot = await db.collection('missions').get();
+            missions = missionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            // Fetch user's characters
+            const charactersSnapshot = await db.collection('personagens').where('userId', '==', currentUser.uid).get();
+            characters = charactersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Fetch mission assignments
+            const assignmentsSnapshot = await db.collection('mission_assignments').get();
+            const assignments = assignmentsSnapshot.docs.map(doc => doc.data());
+
+            // Update character and mission states based on assignments
+            assignments.forEach(assignment => {
+                const mission = missions.find(m => m.id === assignment.missionId);
+                const character = characters.find(c => c.id === assignment.characterId);
+                if(mission) mission.assignedCharacter = assignment.characterId;
+                if(character) character.assignedMission = assignment.missionId;
+            });
+
+            renderMissions();
+            renderCharacters();
+        }
+
+        // --- UI RENDERING ---
+        function renderMissions() {
+            missionListDiv.innerHTML = '';
+            missions.forEach(mission => {
+                const missionLink = document.createElement('a');
+                missionLink.href = "#";
+                missionLink.className = `mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold \${selectedMission && selectedMission.id === mission.id ? 'selected-mission' : ''}`;
+                missionLink.dataset.missionId = mission.id;
+                missionLink.textContent = mission.name;
+                
+                if (mission.assignedCharacter) {
+                    missionLink.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    missionLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        selectMission(mission.id);
+                    });
+                }
+                missionListDiv.appendChild(missionLink);
+            });
+        }
+        
+        function renderCharacters() {
+            characterListDiv.innerHTML = '';
+            characters.forEach(character => {
+                const characterCard = document.createElement('div');
+                characterCard.className = `character-item bg-gray-900 hover:bg-gray-800 text-white p-3 rounded-md cursor-pointer text-center \${selectedCharacter && selectedCharacter.id === character.id ? 'selected-character' : ''} \${character.assignedMission ? 'opacity-50 cursor-not-allowed' : ''}`;
+                characterCard.dataset.characterId = character.id;
+                characterCard.textContent = character.nome; // Assuming 'nome' is the character name field
+                if (!character.assignedMission) {
+                    characterCard.addEventListener('click', () => {
+                        selectCharacter(character.id);
+                    });
+                }
+                characterListDiv.appendChild(characterCard);
+            });
+        }
+
+        // --- SELECTION LOGIC ---
+        function selectMission(missionId) {
+            selectedMission = missions.find(m => m.id === missionId);
+            selectedMissionDisplay.textContent = selectedMission ? selectedMission.name : 'Nenhuma';
+            if (selectedCharacter && selectedCharacter.assignedMission) {
+                selectedCharacter = null;
+            }
+            updateConfirmButtonState();
+            renderMissions();
+            renderCharacters();
+        }
+
+        function selectCharacter(characterId) {
+            selectedCharacter = characters.find(c => c.id === characterId);
+            updateConfirmButtonState();
+            renderCharacters();
+        }
+
+        function updateConfirmButtonState() {
+            if (selectedMission && selectedCharacter && !selectedMission.assignedCharacter && !selectedCharacter.assignedMission) {
+                confirmMissionButton.disabled = false;
+                confirmMissionButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                confirmMissionButton.disabled = true;
+                confirmMissionButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // --- MISSION CONFIRMATION ---
+        async function confirmMission() {
+            if (selectedMission && selectedCharacter) {
+                try {
+                    await db.collection('mission_assignments').add({
+                        missionId: selectedMission.id,
+                        characterId: selectedCharacter.id,
+                        userId: currentUser.uid,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    alert(`Missão "${selectedMission.name}" confirmada com o Agente "${selectedCharacter.nome}"!`);
+
+                    selectedMission = null;
+                    selectedCharacter = null;
+                    selectedMissionDisplay.textContent = 'Nenhuma';
+                    
+                    fetchMissionsAndCharacters(); // Re-fetch all data to ensure consistency
+                    updateConfirmButtonState();
+
+                } catch (error) {
+                    console.error("Error confirming mission: ", error);
+                    alert("Falha ao confirmar a missão. Tente novamente.");
+                }
+            } else {
+                alert('Por favor, selecione uma missão e um agente.');
+            }
+        }
+        confirmMissionButton.addEventListener('click', confirmMission);
+        
+        // --- COUNTDOWN SCRIPT ---
         const countdownDate = new Date('July 18, 2025 20:00:00').getTime();
         const countdownFunction = setInterval(() => {
             const now = new Date().getTime();
@@ -246,128 +375,6 @@
             }
         }, 1000);
 
-        // --- NOVO SCRIPT DE SELEÇÃO DE MISSÃO E AGENTES ---
-
-        const missions = [
-            { id: 'portirus', name: 'INVASÃO EM PORTIRUS', assignedCharacter: null },
-            { id: 'torre-infernal', name: 'RECONSTRUÇÃO DA TORRE INFERNAL', assignedCharacter: null },
-            { id: 'zona-exclusao', name: 'EXPLORAÇÃO DA ZONA DE EXCLUSÃO', assignedCharacter: null }
-        ];
-
-        const characters = [
-            { id: 'agente-alfa', name: 'Agente Alfa', assignedMission: null },
-            { id: 'agente-bravo', name: 'Agente Bravo', assignedMission: null },
-            { id: 'agente-delta', name: 'Agente Delta', assignedMission: null },
-            { id: 'agente-echo', name: 'Agente Echo', assignedMission: null }
-        ];
-
-        let selectedMission = null;
-        let selectedCharacter = null;
-
-        const missionListDiv = document.getElementById('mission-list');
-        const selectedMissionDisplay = document.getElementById('selected-mission-display');
-        const characterListDiv = document.getElementById('character-list');
-        const confirmMissionButton = document.getElementById('confirm-mission-button');
-
-        function renderMissions() {
-            missionListDiv.innerHTML = ''; // Clear previous missions
-            missions.forEach(mission => {
-                const missionLink = document.createElement('a');
-                missionLink.href = "#";
-                missionLink.className = `mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold \${selectedMission && selectedMission.id === mission.id ? 'selected-mission' : ''}`;
-                missionLink.dataset.missionId = mission.id;
-                missionLink.textContent = mission.name;
-                missionLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    selectMission(mission.id);
-                });
-                missionListDiv.appendChild(missionLink);
-            });
-        }
-
-        function renderCharacters() {
-            characterListDiv.innerHTML = ''; // Clear previous characters
-            characters.forEach(character => {
-                const characterCard = document.createElement('div');
-                characterCard.className = `character-item bg-gray-900 hover:bg-gray-800 text-white p-3 rounded-md cursor-pointer text-center \${selectedCharacter && selectedCharacter.id === character.id ? 'selected-character' : ''} \${character.assignedMission ? 'opacity-50 cursor-not-allowed' : ''}`;
-                characterCard.dataset.characterId = character.id;
-                characterCard.textContent = character.name;
-                if (!character.assignedMission) { // Only allow selection if not assigned
-                    characterCard.addEventListener('click', () => {
-                        selectCharacter(character.id);
-                    });
-                }
-                characterListDiv.appendChild(characterCard);
-            });
-        }
-
-        function selectMission(missionId) {
-            selectedMission = missions.find(m => m.id === missionId);
-            selectedMissionDisplay.textContent = selectedMission ? selectedMission.name : 'Nenhuma';
-            
-            // Deselect character if the previously selected character is now assigned to this mission
-            if (selectedCharacter && selectedCharacter.assignedMission === selectedMission.id) {
-                selectedCharacter = null;
-            }
-
-            updateConfirmButtonState();
-            renderMissions(); // Re-render to update selected styling
-            renderCharacters(); // Re-render characters to update availability/selection
-        }
-
-        function selectCharacter(characterId) {
-            const characterToSelect = characters.find(c => c.id === characterId);
-            if (characterToSelect && !characterToSelect.assignedMission) {
-                selectedCharacter = characterToSelect;
-            } else {
-                selectedCharacter = null; // Deselect if already assigned
-            }
-            updateConfirmButtonState();
-            renderCharacters(); // Re-render to update selected styling
-        }
-
-        function updateConfirmButtonState() {
-            if (selectedMission && selectedCharacter) {
-                confirmMissionButton.disabled = false;
-                confirmMissionButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                confirmMissionButton.classList.add('hover:bg-red-600');
-            } else {
-                confirmMissionButton.disabled = true;
-                confirmMissionButton.classList.add('opacity-50', 'cursor-not-allowed');
-                confirmMissionButton.classList.remove('hover:bg-red-600');
-            }
-        }
-
-        function confirmMission() {
-            if (selectedMission && selectedCharacter) {
-                // Assign mission to character and character to mission
-                selectedMission.assignedCharacter = selectedCharacter.id;
-                selectedCharacter.assignedMission = selectedMission.id;
-
-                alert(`Missão "${selectedMission.name}" confirmada com o Agente "${selectedCharacter.name}"!`);
-                
-                // Reset selections after confirmation
-                selectedMission = null;
-                selectedCharacter = null;
-                selectedMissionDisplay.textContent = 'Nenhuma';
-
-                // Re-render everything to reflect changes
-                renderMissions();
-                renderCharacters();
-                updateConfirmButtonState();
-            } else {
-                alert('Por favor, selecione uma missão e um agente.');
-            }
-        }
-
-        // Event listener for the confirm button
-        confirmMissionButton.addEventListener('click', confirmMission);
-
-        // Initial render
-        renderMissions();
-        renderCharacters();
-        updateConfirmButtonState(); // Set initial state
     </script>
-
 </body>
 </html>
