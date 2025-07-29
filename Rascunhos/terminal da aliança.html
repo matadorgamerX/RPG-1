@@ -79,6 +79,10 @@
             50% { text-shadow: 0 0 25px rgba(220, 38, 38, 1); }
             100% { text-shadow: 0 0 4px rgba(220, 38, 38, 0.6); }
         }
+        .selected-mission, .selected-character {
+            background-color: rgba(220, 38, 38, 0.4); /* Fundo vermelho mais claro para seleção */
+            border: 1px solid rgba(220, 38, 38, 0.8); /* Borda mais forte */
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 scanlines">
@@ -129,7 +133,7 @@
                 </section>
             </div>
 
-            <!-- Coluna Direita (Contagem e Links) -->
+            <!-- Coluna Direita (Contagem, Missões, Seleção e Links) -->
             <div class="space-y-6">
                 <!-- Contagem Regressiva -->
                 <section class="terminal-card rounded-lg p-6 text-center">
@@ -160,16 +164,39 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v14l-12 3zm0 0l-6-1.5V5.5L9 7M12 4.5l6-1.5m-6 1.5V19m0-14H9m-6 1.5L9 7m-6 0l6-1.5M9 7L3 5.5" /></svg>
                         MISSÕES ATIVAS
                     </h2>
-                    <div class="space-y-3">
-                        <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
+                    <div class="space-y-3" id="mission-list">
+                        <a href="#" class="mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold" data-mission="INVASÃO EM PORTIRUS">
                             INVASÃO EM PORTIRUS
                         </a>
-                        <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
+                        <a href="#" class="mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold" data-mission="RECONSTRUÇÃO DA TORRE INFERNAL">
                             RECONSTRUÇÃO DA TORRE INFERNAL
                         </a>
-                        <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
+                        <a href="#" class="mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold" data-mission="EXPLORAÇÃO DA ZONA DE EXCLUSÃO">
                             EXPLORAÇÃO DA ZONA DE EXCLUSÃO
                         </a>
+                    </div>
+                </section>
+
+                <!-- Nova Seção: SELEÇÃO DE MISSÃO E AGENTES -->
+                <section class="terminal-card rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zm3-4H6V9h2v8zm4 0h-2V9h2v8zm4 0h-2V9h2v8z" /></svg>
+                        SELEÇÃO DE MISSÃO E AGENTES
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-gray-400 mb-2">Missão Selecionada:</p>
+                            <p id="selected-mission-display" class="font-bold text-red-500 text-lg">Nenhuma</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 mb-2">Selecione seu Agente:</p>
+                            <div id="character-list" class="grid grid-cols-2 gap-3">
+                                <!-- Characters will be loaded here by JavaScript -->
+                            </div>
+                        </div>
+                        <button id="confirm-mission-button" class="mt-4 w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-4 rounded transition-colors duration-300 opacity-50 cursor-not-allowed" disabled>
+                            CONFIRMAR MISSÃO
+                        </button>
                     </div>
                 </section>
 
@@ -200,32 +227,146 @@
 
     <script>
         // --- SCRIPT DA CONTAGEM REGRESSIVA ---
-
-        // Defina a data da próxima sessão aqui.
-        // Formato: 'Month Day, YYYY HH:MM:SS'
         const countdownDate = new Date('July 18, 2025 20:00:00').getTime();
-
         const countdownFunction = setInterval(() => {
             const now = new Date().getTime();
             const distance = countdownDate - now;
-
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            const formatTime = (time) => time < 10 ? `0${time}` : time;
-
+            const formatTime = (time) => time < 10 ? `0\${time}` : time;
             document.getElementById('days').innerText = formatTime(days);
             document.getElementById('hours').innerText = formatTime(hours);
             document.getElementById('minutes').innerText = formatTime(minutes);
             document.getElementById('seconds').innerText = formatTime(seconds);
-
             if (distance < 0) {
                 clearInterval(countdownFunction);
                 document.getElementById('countdown').innerHTML = '<span class="text-2xl md:text-3xl font-bold text-red-500 pulsate-red">A HORA CHEGOU. SEM VOLTA.</span>';
             }
         }, 1000);
+
+        // --- NOVO SCRIPT DE SELEÇÃO DE MISSÃO E AGENTES ---
+
+        const missions = [
+            { id: 'portirus', name: 'INVASÃO EM PORTIRUS', assignedCharacter: null },
+            { id: 'torre-infernal', name: 'RECONSTRUÇÃO DA TORRE INFERNAL', assignedCharacter: null },
+            { id: 'zona-exclusao', name: 'EXPLORAÇÃO DA ZONA DE EXCLUSÃO', assignedCharacter: null }
+        ];
+
+        const characters = [
+            { id: 'agente-alfa', name: 'Agente Alfa', assignedMission: null },
+            { id: 'agente-bravo', name: 'Agente Bravo', assignedMission: null },
+            { id: 'agente-delta', name: 'Agente Delta', assignedMission: null },
+            { id: 'agente-echo', name: 'Agente Echo', assignedMission: null }
+        ];
+
+        let selectedMission = null;
+        let selectedCharacter = null;
+
+        const missionListDiv = document.getElementById('mission-list');
+        const selectedMissionDisplay = document.getElementById('selected-mission-display');
+        const characterListDiv = document.getElementById('character-list');
+        const confirmMissionButton = document.getElementById('confirm-mission-button');
+
+        function renderMissions() {
+            missionListDiv.innerHTML = ''; // Clear previous missions
+            missions.forEach(mission => {
+                const missionLink = document.createElement('a');
+                missionLink.href = "#";
+                missionLink.className = `mission-item block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold \${selectedMission && selectedMission.id === mission.id ? 'selected-mission' : ''}`;
+                missionLink.dataset.missionId = mission.id;
+                missionLink.textContent = mission.name;
+                missionLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    selectMission(mission.id);
+                });
+                missionListDiv.appendChild(missionLink);
+            });
+        }
+
+        function renderCharacters() {
+            characterListDiv.innerHTML = ''; // Clear previous characters
+            characters.forEach(character => {
+                const characterCard = document.createElement('div');
+                characterCard.className = `character-item bg-gray-900 hover:bg-gray-800 text-white p-3 rounded-md cursor-pointer text-center \${selectedCharacter && selectedCharacter.id === character.id ? 'selected-character' : ''} \${character.assignedMission ? 'opacity-50 cursor-not-allowed' : ''}`;
+                characterCard.dataset.characterId = character.id;
+                characterCard.textContent = character.name;
+                if (!character.assignedMission) { // Only allow selection if not assigned
+                    characterCard.addEventListener('click', () => {
+                        selectCharacter(character.id);
+                    });
+                }
+                characterListDiv.appendChild(characterCard);
+            });
+        }
+
+        function selectMission(missionId) {
+            selectedMission = missions.find(m => m.id === missionId);
+            selectedMissionDisplay.textContent = selectedMission ? selectedMission.name : 'Nenhuma';
+            
+            // Deselect character if the previously selected character is now assigned to this mission
+            if (selectedCharacter && selectedCharacter.assignedMission === selectedMission.id) {
+                selectedCharacter = null;
+            }
+
+            updateConfirmButtonState();
+            renderMissions(); // Re-render to update selected styling
+            renderCharacters(); // Re-render characters to update availability/selection
+        }
+
+        function selectCharacter(characterId) {
+            const characterToSelect = characters.find(c => c.id === characterId);
+            if (characterToSelect && !characterToSelect.assignedMission) {
+                selectedCharacter = characterToSelect;
+            } else {
+                selectedCharacter = null; // Deselect if already assigned
+            }
+            updateConfirmButtonState();
+            renderCharacters(); // Re-render to update selected styling
+        }
+
+        function updateConfirmButtonState() {
+            if (selectedMission && selectedCharacter) {
+                confirmMissionButton.disabled = false;
+                confirmMissionButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                confirmMissionButton.classList.add('hover:bg-red-600');
+            } else {
+                confirmMissionButton.disabled = true;
+                confirmMissionButton.classList.add('opacity-50', 'cursor-not-allowed');
+                confirmMissionButton.classList.remove('hover:bg-red-600');
+            }
+        }
+
+        function confirmMission() {
+            if (selectedMission && selectedCharacter) {
+                // Assign mission to character and character to mission
+                selectedMission.assignedCharacter = selectedCharacter.id;
+                selectedCharacter.assignedMission = selectedMission.id;
+
+                alert(`Missão "${selectedMission.name}" confirmada com o Agente "${selectedCharacter.name}"!`);
+                
+                // Reset selections after confirmation
+                selectedMission = null;
+                selectedCharacter = null;
+                selectedMissionDisplay.textContent = 'Nenhuma';
+
+                // Re-render everything to reflect changes
+                renderMissions();
+                renderCharacters();
+                updateConfirmButtonState();
+            } else {
+                alert('Por favor, selecione uma missão e um agente.');
+            }
+        }
+
+        // Event listener for the confirm button
+        confirmMissionButton.addEventListener('click', confirmMission);
+
+        // Initial render
+        renderMissions();
+        renderCharacters();
+        updateConfirmButtonState(); // Set initial state
     </script>
 
 </body>
