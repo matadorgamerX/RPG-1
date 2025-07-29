@@ -12,7 +12,7 @@
     <!-- Google Fonts: Inter e Roboto Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- Firebase Core SDKs (v8.x) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -28,6 +28,7 @@
             color: #a1a1aa;
         }
         .font-roboto-mono { font-family: 'Roboto Mono', monospace; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
         body::after {
             content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             box-shadow: inset 0 0 150px rgba(0,0,0,0.8); pointer-events: none; z-index: 10;
@@ -65,7 +66,7 @@
     <!-- Login Section -->
     <div id="login-section" class="w-full max-w-md mx-auto z-20 relative py-8">
         <div class="terminal-card rounded-lg p-6 glow-effect-red">
-            <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">ACESSO RESTRITO</h2>
+            <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">ACESSO RESTRITO</h2>
             <div class="space-y-4">
                 <input type="email" id="email" placeholder="Email do Operativo" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
                 <input type="password" id="password" placeholder="Senha de Acesso" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
@@ -89,7 +90,7 @@
             <!-- Coluna da Esquerda: Inscrição -->
             <div class="space-y-6">
                 <section class="terminal-card rounded-lg p-6 glow-effect-red">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">INSCREVER-SE NA MISSÃO</h2>
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">INSCREVER-SE NA MISSÃO</h2>
                     <div class="space-y-4">
                         <div>
                             <label for="mission-select" class="block text-sm font-medium mb-1">Selecione a Missão:</label>
@@ -103,14 +104,19 @@
                     </div>
                 </section>
                 <section class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">DIRETIVAS DE EMERGÊNCIA</h2>
-                    <p class="text-gray-400">A partida do 'Arauto do Amanhecer' é inevitável. As estimativas de baixas para a fase inicial foram reavaliadas para 85%. Não esperem por reforços.</p>
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">DIRETIVAS DA MISSÃO</h2>
+                    <div class="text-gray-400 space-y-3">
+                        <p><strong class="text-red-400">Objetivo Primário:</strong> Adentrar as ruínas de Kuar-Tor, conhecidas como "O Coração do Vazio", e resgatar o artefato conhecido como "A Lágrima de Aethel".</p>
+                        <p><strong class="text-red-400">Contexto:</strong> Nossas sentinelas arcanas detectaram uma flutuação massiva de energia caótica emanando do Coração do Vazio. Esta perturbação ameaça rasgar o véu entre os mundos, liberando horrores indescritíveis. A Lágrima de Aethel é a única chave conhecida capaz de estabilizar ou selar a fenda.</p>
+                        <p><strong class="text-red-400">Ameaças Conhecidas:</strong> As ruínas são habitadas por espectros vingativos, bestas disformes corrompidas pelo caos e os "Sussurrantes", entidades que se alimentam da sanidade dos intrusos. Relatórios indicam a presença de uma entidade guardiã de poder imensurável perto do artefato.</p>
+                        <p><strong class="text-red-400">Prognóstico:</strong> A chance de sobrevivência é estimada em menos de 15%. Cada passo dentro de Kuar-Tor será um teste para seu corpo, sua mente e sua alma. Esta não é uma missão de glória, mas de sacrifício. O destino de reinos inteiros repousa sobre seus ombros. Não falhem.</p>
+                    </div>
                 </section>
             </div>
             <!-- Coluna da Direita: Painel de Inscritos -->
             <div class="space-y-6">
                  <section class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">INSCRITOS NA EXPEDIÇÃO</h2>
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">INSCRITOS NA EXPEDIÇÃO</h2>
                     <div id="mission-roster" class="mission-roster">
                         <p class="text-center text-gray-500">Aguardando dados...</p>
                     </div>
@@ -120,6 +126,9 @@
     </div>
 
     <script>
+        // --- Self-Contained Script ---
+
+        // 1. FIREBASE INITIALIZATION
         const firebaseConfig = {
             apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
             authDomain: "kuar-tor-portal.firebaseapp.com",
@@ -136,6 +145,7 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // 2. APPLICATION LOGIC
         document.addEventListener('DOMContentLoaded', () => {
             const loginSection = document.getElementById('login-section');
             const mainContent = document.getElementById('main-content');
