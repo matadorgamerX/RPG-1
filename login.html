@@ -1,87 +1,187 @@
+
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal da Campanha: Kuar-Tor</title>
+    <title>Acesso ao Portal - Kuar-Tor</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <style>
         body {
-            font-family: 'Roboto Slab', serif;
-            background-color: #0a0a0a;
+            font-family: 'Inter', sans-serif;
+            background-color: #0c0c0c;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
             color: #d1d5db;
-            background-image: url('https://images.unsplash.com/photo-1597873819455-90031846b6c3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
         }
+        .font-cinzel { font-family: 'Cinzel', serif; }
         .main-container {
-            background-color: rgba(10, 10, 10, 0.9);
-            backdrop-filter: blur(8px);
+            background-color: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.2);
         }
-        h1, h2 {
-            font-family: 'Cinzel', serif;
-        }
-        .form-container {
-            background-color: rgba(23, 23, 23, 0.7);
-            border: 1px solid #404040;
-            transition: all 0.3s ease;
-        }
-        .form-container:hover {
-            border-color: #ef4444;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1), 0 4px 6px -2px rgba(239, 68, 68, 0.05);
-        }
-        .btn-theme {
-            transition: all 0.2s ease-in-out;
-            font-family: 'Cinzel', serif;
-        }
-        .btn-theme:hover {
-            transform: scale(1.05);
-        }
-        .input-field {
+        .form-input {
             background-color: #1f2937;
             border: 1px solid #4b5563;
-            color: #d1d5db;
+        }
+        .form-input:focus {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 2px #ef444460;
+            outline: none;
+        }
+        .submit-button {
+            background-color: #991b1b;
+            transition: background-color 0.3s;
+        }
+        .submit-button:hover {
+            background-color: #b91c1c;
+        }
+        .toggle-link {
+            color: #fca5a5;
+            cursor: pointer;
+        }
+        .toggle-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen">
 
-    <div class="main-container w-full max-w-lg p-8 rounded-xl shadow-2xl border border-gray-800">
-        <header class="text-center mb-10">
-            <h1 class="text-5xl font-bold text-red-500" style="text-shadow: 0 0 10px rgba(153, 27, 27, 0.7);">Acesso ao Portal</h1>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="form-container p-6 rounded-lg">
-                <h2 class="text-2xl font-bold text-white mb-4 text-center">Login</h2>
-                <form id="login-form">
-                    <input type="email" id="login-email" placeholder="Email" required class="input-field w-full p-2 mb-4 rounded-md">
-                    <input type="password" id="login-password" placeholder="Senha" required class="input-field w-full p-2 mb-4 rounded-md">
-                    <button type="submit" class="btn-theme bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-md w-full">Entrar</button>
-                </form>
-            </div>
-
-            <div class="form-container p-6 rounded-lg">
-                <h2 class="text-2xl font-bold text-white mb-4 text-center">Cadastro</h2>
-                <form id="signup-form">
-                    <input type="email" id="signup-email" placeholder="Email" required class="input-field w-full p-2 mb-4 rounded-md">
-                    <input type="password" id="signup-password" placeholder="Senha" required class="input-field w-full p-2 mb-4 rounded-md">
-                    <button type="submit" class="btn-theme bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-md w-full">Cadastrar</button>
-                </form>
-            </div>
+    <div class="main-container w-full max-w-md p-8 rounded-xl shadow-2xl">
+        <!-- Login Form -->
+        <div id="login-form-container">
+            <header class="text-center mb-8">
+                <h1 class="text-4xl font-cinzel font-bold text-red-500" style="text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);">Acesso ao Portal</h1>
+            </header>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium mb-1">Email do Operativo</label>
+                    <input type="email" id="login-email" required class="form-input w-full p-3 rounded-md">
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium mb-1">Senha de Acesso</label>
+                    <input type="password" id="login-password" required class="form-input w-full p-3 rounded-md">
+                </div>
+                <button type="submit" class="submit-button w-full text-white font-bold py-3 px-4 rounded-md">Entrar</button>
+            </form>
+            <p id="login-error" class="text-red-500 mt-4 text-center"></p>
+            <p class="mt-6 text-center text-sm">
+                Não tem uma conta? <span id="show-register-link" class="toggle-link">Registre-se aqui.</span>
+            </p>
         </div>
 
-        <footer class="text-center mt-12">
-            <p class="text-gray-500 text-sm"><a href="main.html" class="hover:text-red-500">Voltar para a página inicial</a></p>
-        </footer>
+        <!-- Registration Form (Hidden by default) -->
+        <div id="register-form-container" class="hidden">
+            <header class="text-center mb-8">
+                <h1 class="text-4xl font-cinzel font-bold text-red-500" style="text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);">Registro de Operativo</h1>
+            </header>
+            <form id="register-form" class="space-y-6">
+                <div>
+                    <label for="register-nickname" class="block text-sm font-medium mb-1">Seu Nickname</label>
+                    <input type="text" id="register-nickname" required class="form-input w-full p-3 rounded-md">
+                </div>
+                <div>
+                    <label for="register-email" class="block text-sm font-medium mb-1">Seu Email</label>
+                    <input type="email" id="register-email" required class="form-input w-full p-3 rounded-md">
+                </div>
+                <div>
+                    <label for="register-password" class="block text-sm font-medium mb-1">Crie sua Senha</label>
+                    <input type="password" id="register-password" required class="form-input w-full p-3 rounded-md">
+                </div>
+                <button type="submit" class="submit-button w-full text-white font-bold py-3 px-4 rounded-md">Registrar</button>
+            </form>
+            <p id="register-error" class="text-red-500 mt-4 text-center"></p>
+            <p class="mt-6 text-center text-sm">
+                Já tem uma conta? <span id="show-login-link" class="toggle-link">Faça o login.</span>
+            </p>
+        </div>
     </div>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="auth.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
+            authDomain: "kuar-tor-portal.firebaseapp.com",
+            projectId: "kuar-tor-portal",
+            storageBucket: "kuar-tor-portal.appspot.com",
+            messagingSenderId: "438781244189",
+            appId: "1:438781244189:web:99ea6a25fc459b14f567f4"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginFormContainer = document.getElementById('login-form-container');
+            const registerFormContainer = document.getElementById('register-form-container');
+            const showRegisterLink = document.getElementById('show-register-link');
+            const showLoginLink = document.getElementById('show-login-link');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const loginError = document.getElementById('login-error');
+            const registerError = document.getElementById('register-error');
+
+            showRegisterLink.addEventListener('click', () => {
+                loginFormContainer.classList.add('hidden');
+                registerFormContainer.classList.remove('hidden');
+            });
+            showLoginLink.addEventListener('click', () => {
+                registerFormContainer.classList.add('hidden');
+                loginFormContainer.classList.remove('hidden');
+            });
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                loginError.textContent = '';
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(() => {
+                        window.location.href = './Rascunhos/terminal da aliança.html';
+                    })
+                    .catch(() => {
+                        loginError.textContent = "Credenciais inválidas.";
+                    });
+            });
+
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const nickname = document.getElementById('register-nickname').value.trim();
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+                registerError.textContent = '';
+
+                if(!nickname) {
+                    registerError.textContent = "Por favor, insira um nickname.";
+                    return;
+                }
+
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Set the display name for the new user
+                        return userCredential.user.updateProfile({
+                            displayName: nickname
+                        });
+                    })
+                    .then(() => {
+                        // Redirect after profile is updated
+                        window.location.href = './Rascunhos/terminal da aliança.html';
+                    })
+                    .catch((error) => {
+                        if (error.code == 'auth/weak-password') {
+                            registerError.textContent = 'A senha é muito fraca.';
+                        } else if (error.code == 'auth/email-already-in-use') {
+                            registerError.textContent = 'Este email já está em uso.';
+                        } else {
+                            registerError.textContent = 'Erro ao registrar: ' + error.message;
+                        }
+                    });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -9,17 +9,17 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts: Inter e Roboto Mono -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     
-    <!-- Firebase Core SDKs (v8.x) -->
+    <!-- Firebase Core SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
-    <!-- Estilos personalizados -->
+    <!-- Styles -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -29,54 +29,20 @@
         }
         .font-roboto-mono { font-family: 'Roboto Mono', monospace; }
         .font-cinzel { font-family: 'Cinzel', serif; }
-        body::after {
-            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            box-shadow: inset 0 0 150px rgba(0,0,0,0.8); pointer-events: none; z-index: 10;
-        }
-        .scanlines::before {
-            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(to bottom, rgba(18, 18, 18, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-            background-size: 100% 4px; z-index: 5; pointer-events: none;
-            animation: scanline-animation 10s linear infinite;
-        }
-        @keyframes scanline-animation { 0% { background-position: 0 0; } 100% { background-position: 0 -200px; } }
-        .glow-effect-red { box-shadow: 0 0 8px rgba(220, 38, 38, 0.3), 0 0 12px rgba(220, 38, 38, 0.2); }
         .terminal-card { background-color: rgba(10, 10, 10, 0.7); backdrop-filter: blur(5px); border: 1px solid rgba(220, 38, 38, 0.2); }
-        #main-content { display: none; }
         .mission-roster h4 {
-            font-family: 'Cinzel', serif;
-            color: #fca5a5;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            border-bottom: 1px solid #4b5563;
-            padding-bottom: 0.25rem;
+            font-family: 'Cinzel', serif; color: #fca5a5; margin-top: 1rem; margin-bottom: 0.5rem;
+            border-bottom: 1px solid #4b5563; padding-bottom: 0.25rem;
         }
-        .roster-entry {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            padding: 0.25rem 0;
-        }
+        .roster-entry { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 0.25rem 0; }
         .roster-character { font-weight: 600; color: #e5e7eb; }
         .roster-user { font-style: italic; color: #9ca3af; font-size: 0.8rem; }
     </style>
 </head>
-<body class="min-h-screen p-4 scanlines">
+<body class="min-h-screen p-4">
 
-    <!-- Login Section -->
-    <div id="login-section" class="w-full max-w-md mx-auto z-20 relative py-8">
-        <div class="terminal-card rounded-lg p-6 glow-effect-red">
-            <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">ACESSO RESTRITO</h2>
-            <div class="space-y-4">
-                <input type="email" id="email" placeholder="Email do Operativo" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                <input type="password" id="password" placeholder="Senha de Acesso" class="w-full bg-gray-900 text-white p-3 rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                <button id="login-button" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-4 rounded transition-colors duration-300">ENTRAR</button>
-            </div>
-            <p id="login-error" class="text-red-500 mt-4"></p>
-        </div>
-    </div>
-    
-    <div id="main-content">
+    <!-- This content will only be shown if the user is logged in -->
+    <div id="main-content" class="hidden">
         <header class="text-center mb-8 flex justify-between items-center">
             <div></div>
             <div>
@@ -87,9 +53,9 @@
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Coluna da Esquerda: Inscrição -->
+            <!-- Left Column: Signup -->
             <div class="space-y-6">
-                <section class="terminal-card rounded-lg p-6 glow-effect-red">
+                <section class="terminal-card rounded-lg p-6">
                     <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">INSCREVER-SE NA MISSÃO</h2>
                     <div class="space-y-4">
                         <div>
@@ -106,14 +72,14 @@
                 <section class="terminal-card rounded-lg p-6">
                     <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">DIRETIVAS DA MISSÃO</h2>
                     <div class="text-gray-400 space-y-3">
-                        <p><strong class="text-red-400">Objetivo Primário:</strong> Adentrar as ruínas de Kuar-Tor, conhecidas como "O Coração do Vazio", e resgatar o artefato conhecido como "A Lágrima de Aethel".</p>
-                        <p><strong class="text-red-400">Contexto:</strong> Nossas sentinelas arcanas detectaram uma flutuação massiva de energia caótica emanando do Coração do Vazio. Esta perturbação ameaça rasgar o véu entre os mundos, liberando horrores indescritíveis. A Lágrima de Aethel é a única chave conhecida capaz de estabilizar ou selar a fenda.</p>
-                        <p><strong class="text-red-400">Ameaças Conhecidas:</strong> As ruínas são habitadas por espectros vingativos, bestas disformes corrompidas pelo caos e os "Sussurrantes", entidades que se alimentam da sanidade dos intrusos. Relatórios indicam a presença de uma entidade guardiã de poder imensurável perto do artefato.</p>
-                        <p><strong class="text-red-400">Prognóstico:</strong> A chance de sobrevivência é estimada em menos de 15%. Cada passo dentro de Kuar-Tor será um teste para seu corpo, sua mente e sua alma. Esta não é uma missão de glória, mas de sacrifício. O destino de reinos inteiros repousa sobre seus ombros. Não falhem.</p>
+                        <p><strong class="text-red-400">Objetivo Primário:</strong> Adentrar as ruínas de Kuar-Tor e resgatar o artefato "A Lágrima de Aethel".</p>
+                        <p><strong class="text-red-400">Contexto:</strong> Uma flutuação de energia caótica ameaça rasgar o véu entre os mundos. A Lágrima é a única chave para selar a fenda.</p>
+                        <p><strong class="text-red-400">Ameaças Conhecidas:</strong> Espectros, bestas disformes, e entidades que se alimentam da sanidade. Um guardião de poder imensurável protege o artefato.</p>
+                        <p><strong class="text-red-400">Prognóstico:</strong> Chance de sobrevivência: 15%. Esta é uma missão de sacrifício. Não falhem.</p>
                     </div>
                 </section>
             </div>
-            <!-- Coluna da Direita: Painel de Inscritos -->
+            <!-- Right Column: Roster -->
             <div class="space-y-6">
                  <section class="terminal-card rounded-lg p-6">
                     <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">INSCRITOS NA EXPEDIÇÃO</h2>
@@ -126,17 +92,13 @@
     </div>
 
     <script>
-        // --- Self-Contained Script ---
-
-        // 1. FIREBASE INITIALIZATION
         const firebaseConfig = {
             apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
             authDomain: "kuar-tor-portal.firebaseapp.com",
             projectId: "kuar-tor-portal",
             storageBucket: "kuar-tor-portal.appspot.com",
             messagingSenderId: "438781244189",
-            appId: "1:438781244189:web:99ea6a25fc459b14f567f4",
-            measurementId: "G-X5GTEY10VZ"
+            appId: "1:438781244189:web:99ea6a25fc459b14f567f4"
         };
         
         if (!firebase.apps.length) {
@@ -145,62 +107,41 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // 2. APPLICATION LOGIC
         document.addEventListener('DOMContentLoaded', () => {
-            const loginSection = document.getElementById('login-section');
             const mainContent = document.getElementById('main-content');
-            const loginButton = document.getElementById('login-button');
-            const logoutButton = document.getElementById('logout-button');
-            const emailInput = document.getElementById('email');
-            const passwordInput = document.getElementById('password');
-            const loginError = document.getElementById('login-error');
             const userDisplay = document.getElementById('user-display');
-            
+            const logoutButton = document.getElementById('logout-button');
             const missionSelect = document.getElementById('mission-select');
             const characterNameInput = document.getElementById('character-name-input');
             const confirmSignupButton = document.getElementById('confirm-signup-button');
             const missionRosterDiv = document.getElementById('mission-roster');
-
+            
             let missions = [];
             let currentUser = null;
 
             auth.onAuthStateChanged(user => {
                 if (user) {
                     currentUser = user;
-                    loginSection.style.display = 'none';
-                    mainContent.style.display = 'block';
-                    userDisplay.textContent = `Operativo Conectado: ${user.email}`;
+                    mainContent.classList.remove('hidden');
+                    userDisplay.textContent = `Operativo Conectado: ${user.displayName || user.email}`;
                     loadMissions();
                     listenForSignups();
                 } else {
-                    currentUser = null;
-                    mainContent.style.display = 'none';
-                    loginSection.style.display = 'block';
+                    window.location.href = '../login.html';
                 }
             });
 
-            loginButton.addEventListener('click', () => {
-                const email = emailInput.value;
-                const password = passwordInput.value;
-                loginError.textContent = '';
-                auth.signInWithEmailAndPassword(email, password)
-                    .catch(error => {
-                        loginError.textContent = "Credenciais inválidas. Tente novamente.";
-                    });
-            });
-
             logoutButton.addEventListener('click', () => {
-                auth.signOut();
+                auth.signOut().catch(error => console.error("Logout Error:", error));
             });
             
             async function loadMissions() {
                 try {
                     const missionsSnapshot = await db.collection('missions').get();
                     missions = missionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    
                     missionSelect.innerHTML = missions.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
                 } catch (err) {
-                    console.error("Error loading missions: ", err);
+                    console.error("Error loading missions:", err);
                 }
             }
 
@@ -220,13 +161,13 @@
                         missionName: selectedMission.name,
                         characterName: characterName,
                         userId: currentUser.uid,
-                        userEmail: currentUser.email,
+                        userNickname: currentUser.displayName || 'Anônimo', // Use nickname
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     alert(`Personagem "${characterName}" inscrito na missão "${selectedMission.name}" com sucesso!`);
                     characterNameInput.value = '';
                 } catch (error) {
-                    console.error("Error signing up: ", error);
+                    console.error("Error signing up for mission: ", error);
                     alert("Falha ao se inscrever. Verifique suas permissões ou tente novamente.");
                 }
             });
@@ -234,7 +175,6 @@
             function listenForSignups() {
                 db.collection('mission_signups').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
                     const signupsByMission = {};
-
                     snapshot.docs.forEach(doc => {
                         const signup = doc.data();
                         if (!signupsByMission[signup.missionName]) {
@@ -242,8 +182,9 @@
                         }
                         signupsByMission[signup.missionName].push(signup);
                     });
-
                     renderRoster(signupsByMission);
+                }, error => {
+                    console.error("Error listening for signups:", error);
                 });
             }
 
@@ -252,14 +193,13 @@
                     missionRosterDiv.innerHTML = '<p class="text-center text-gray-500">Nenhum operativo inscrito ainda.</p>';
                     return;
                 }
-
                 let rosterHtml = '';
                 for (const missionName in signupsByMission) {
                     rosterHtml += `<h4>${missionName}</h4>`;
                     rosterHtml += signupsByMission[missionName].map(signup => `
                         <div class="roster-entry">
                             <span class="roster-character">${signup.characterName}</span>
-                            <span class="roster-user">${signup.userEmail}</span>
+                            <span class="roster-user">${signup.userNickname}</span>
                         </div>
                     `).join('');
                 }
