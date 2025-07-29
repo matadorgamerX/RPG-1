@@ -4,10 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Ficha +2D6 Dark Fantasy - Kuar-Tor Final (Online)</title>
+    <!-- Firebase Core SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- Import the shared auth module to use the same login session -->
+    <script type="module" src="../auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    
     <style>
         body { 
             font-family: 'Inter', sans-serif;
@@ -324,16 +332,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, onSnapshot, setDoc, getDoc, deleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
-            authDomain: "kuar-tor-portal.firebaseapp.com",
-            projectId: "kuar-tor-portal",
-            storageBucket: "kuar-tor-portal.firebasestorage.app",
-            messagingSenderId: "438781244189",
-            appId: "1:438781244189:web:99ea6a25fc459b14f567f4",
-            measurementId: "G-X5GTEY10VZ"
-            };
+
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -904,5 +903,71 @@
         updateAllStats();
     }
     </script>
+<script type="module">
+    // Import the auth and db objects from your shared auth.js
+    import { auth, db } from '../auth.js';
+
+    let currentUser = null;
+
+    // Listen for auth state changes to get the current user
+    auth.onAuthStateChanged((user) => {
+        const authStatusEl = document.getElementById('auth-status');
+        if (user) {
+            currentUser = user;
+            console.log("User is logged in on form page:", currentUser.uid);
+            authStatusEl.textContent = `Logado como: ${user.email}. Pronto para salvar.`;
+            authStatusEl.style.color = '#4ade80'; // Green color
+        } else {
+            currentUser = null;
+            console.log("User is not logged in on form page.");
+            authStatusEl.textContent = "Você não está logado! Por favor, faça o login no Terminal da Aliança primeiro.";
+            authStatusEl.style.color = '#f87171'; // Red color
+        }
+    });
+
+    // Make the save function available globally so the button's onclick can find it
+    window.saveCharacterSheet = function() {
+        if (!currentUser) {
+            alert("Erro: Você não está logado. Não é possível salvar a ficha.");
+            return;
+        }
+
+        const characterSheet = {
+            userId: currentUser.uid, // <-- This links the character to your account
+            nome: document.getElementById('nome').value,
+            raca: document.getElementById('raca').value,
+            classe: document.getElementById('classe').value,
+            nivel: document.getElementById('nivel').value,
+            forca: document.getElementById('forca').value,
+            destreza: document.getElementById('destreza').value,
+            constituicao: document.getElementById('constituicao').value,
+            inteligencia: document.getElementById('inteligencia').value,
+            sabedoria: document.getElementById('sabedoria').value,
+            carisma: document.getElementById('carisma').value,
+            pontosVida: document.getElementById('pontosVida').value,
+            pontosEnergia: document.getElementById('pontosEnergia').value,
+            defesa: document.getElementById('defesa').value,
+            iniciativa: document.getElementById('iniciativa').value,
+            vantagens: document.getElementById('vantagens').value,
+            desvantagens: document.getElementById('desvantagens').value,
+            pericias: document.getElementById('pericias').value,
+            magias: document.getElementById('magias').value,
+            equipamento: document.getElementById('equipamento').value,
+            historia: document.getElementById('historia').value,
+            createdAt: new Date()
+        };
+
+        // Save to the correct 'personagens' collection
+        db.collection("personagens").add(characterSheet)
+            .then((docRef) => {
+                alert(`Personagem salvo com sucesso!`);
+                console.log("Document written with ID: ", docRef.id);
+            })
+            .catch((error) => {
+                console.error("Error adding document: ", error);
+                alert(`Erro ao salvar personagem: ${error.message}`);
+            });
+    }
+</script>
 </body>
 </html>
