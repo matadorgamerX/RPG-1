@@ -1,24 +1,51 @@
-const firebase = require("firebase/compat/app");
-require("firebase/compat/auth");
-require("firebase/compat/firestore");
+const admin = require('firebase-admin');
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
-    authDomain: "kuar-tor-portal.firebaseapp.com",
-    projectId: "kuar-tor-portal",
-    storageBucket: "kuar-tor-portal.firebasestorage.app",
-    messagingSenderId: "438781244189",
-    appId: "1:438781244189:web:99ea6a25fc459b14f567f4",
-    measurementId: "G-X5GTEY10VZ"
+const serviceAccount = {
+  "type": "service_account",
+  "project_id": "kuar-tor-portal",
+  "private_key_id": "e75b171b0fce20cb2ab9ddc09d84bfcd2203b1a4",
+  "private_key": `-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDnpnlV5rXWgWbU
+JuQhk+3D+VpYbHKgVuVyUMa2pHJ0Jl7Zs7Gto98X7vdP2i64QxwpHAdx2kyTOwbr
+xqGFs3Lq4kth1W8lavgMnYoXpZ2tIhY/uxFEG06m8PEepnmbmaXpjcUCD3H48Izg
+TK3QhazvsKS64NRcFkS50TIZCxsxvZsI1dxOlzllX7PW80PC7EKQAd6i6S3uOX/S
+hVZJ+epV9s0zb7GQ3TdyFZVTvSOa+lrOMECxggJ3q4w+9xHn0sxjtMhnOTNXAK53
+zMcvma8AlwwsAFOcKyACo1x9tMBJPhY6KriamWMa8r7jsUWF4Duc2TofB6WziJzY
+nKl99KVpAgMBAAECggEACIPVB/RQEM924SuAzT8ryT1cNc3etMgc7QPNGh+XWW+j
+our5CAHzDGUrUBMcDofg/B3cpDG7CNptmbMWctyyx7GDxdfbmwuAjK4pyk67KgcL
+vFH7A37heD95DYBfDfoq4Bfm+vloXhcxhnkrFnQjdDgRBhGHnM7wvcfTyJng6QYW
+SH5yZ9BO0zKoocBOToE3HGmHTyZPEg4bzHX+f9xXHikyI4RAqd8BXWCT0EJsXa9r
+naMsD+u/eRg9s3ZD0Js4KGzIZhdNR0jYUP2Ywnqa9wbWskHT32SoDXzDpRtrZ4VAB
+dl56RfI0lxEjLKxkFKXC+m9O/S7JJDgE4RHv5w/09QKBgQD7JKGgw8eaMBHZhwO4
+Yrai2svBAUBUMUJ0DZbPMYuFTaaD9FemyfuP8F0I7EtuuwqGrxNFQXxJLByx9hvl
+fpNKJjkmC3KUDwcXsHaK1TcuK558+OVKl6jn002s26+JZwK/iqFx0b/rEHjoK2Im
+jR4Vlm26ElokpKgjIXbwOfPR/wKBgQDsIVY/w+hQhBqLGVIMgwKMubaEbU9Zbw0q
+UGCp94FQC1ywCc/d6ydyi2W+yuLQz86OfkjJ6/J3hdMw5OCEUg+ykTNLptFkkJEU
+H8/N9Q5BCmDHggGazbBjoHrvvMlOq59BLgBw7ZFBfxTAh682qlloa/tXnYuR9Ery
+G5cdXsw4lwKBgD8bUVHoYDuqYJHcj17Bz0rU1+ZDvjpptl0bHQ4rUPfKL1FxEKVk
+k8XzjC010y6b6WU2kQ0SC30HjJ5bTV85kyFKwYmBzuTNcebN/LueIT52R3j3wgYg
+Xd0DB72r5kwMinA/EZpcLnGOzhLo89zkEO8zwZbEDcqvZWCOhCiRJ2dZAoGBAMBT
+Ks/G/jpOTtxK5FRChNogDTPxYHbkh6GWVBU7/Xw3tOfBJiiHdtrKBTYQRAt1prTS
+0PB+GEAXpPsnAGNl/1kfANu2ZMh3I2Nzwarr1Q9Op6L4FdyDeg67UEZhyskj6hOJ
+p1xTc0MYgcuK+EAbIbV2dgJX1K0tf7mQlVWbt9TDAoGADHpPjGhZXE5TYFiyLKB3
+v2wqb1e0Q2HC0/Y2tw5l1vKCPE+2EpvpnkMa8uEqqzX6Jb/jFNSx7GAZT0yI+Jxj
+1tQ0LTvOaP3DJ4JQtx6Z9MpWUgY7TXPmqi1qNwPp3foyjh8a1jZ1xn9dDFjNXFON
+VPuzyoSytaH9ygiWSzIh3Z0=
+-----END PRIVATE KEY-----`,
+  "client_email": "firebase-adminsdk-fbsvc@kuar-tor-portal.iam.gserviceaccount.com",
+  "client_id": "109885213693290782656",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40kuar-tor-portal.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
 };
 
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
-const db = firebase.firestore();
+const db = admin.firestore();
 
 const estadoGlobal = {
     fundosComunitarios: 50000,
@@ -60,13 +87,12 @@ const estadoGlobal = {
 
 const main = async () => {
     try {
-        console.log("Attempting to populate database...");
         await db.collection('santuario').doc('estadoGlobal').set(estadoGlobal);
         console.log("Database populated successfully!");
-        process.exit(0);
     } catch (error) {
         console.error("Error populating database: ", error);
-        process.exit(1);
+    } finally {
+        process.exit();
     }
 };
 

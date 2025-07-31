@@ -129,28 +129,14 @@
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 
-    <!-- Player de áudio escondido -->
-    <div id="audio-container" class="hidden">
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/fL3082aK-d0?autoplay=1&loop=1&playlist=fL3082aK-d0&controls=0&mute=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </div>
-    
-    <!-- Botão de controle da música -->
-    <div id="music-player">
-        <button id="music-toggle" aria-label="Controlar música">
-            <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-            <svg id="pause-icon" class="hidden" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
-        </button>
-    </div>
-
     <div class="max-w-7xl mx-auto">
         <!-- Cabeçalho -->
         <header class="text-center mb-8">
             <h1 class="text-5xl md:text-6xl font-bold header-title tracking-wider">Santuário dos Expedicionários</h1>
             <p class="mt-4 text-lg text-gray-400 max-w-3xl mx-auto font-light">Nas cinzas de Kuar-Tor, a esperança é forjada em fogo e desespero.</p>
-            <div id="player-info" class="mt-4 card max-w-md mx-auto p-3 rounded-lg text-lg">
-                <!-- Informações do jogador serão inseridas aqui -->
-            </div>
-             <div id="auth-container" class="mt-4"></div>
+            <div id="player-info" class="mt-4 card max-w-md mx-auto p-3 rounded-lg text-lg"></div>
+            <div id="auth-container" class="mt-4"></div>
+            <div id="admin-controls" class="mt-4"></div>
         </header>
 
         <!-- Navegação por Abas -->
@@ -161,7 +147,6 @@
     </div>
 
     <script type="module">
-        // Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
             authDomain: "kuar-tor-portal.firebaseapp.com",
@@ -180,11 +165,10 @@
         const db = firebase.firestore();
 
         document.addEventListener('DOMContentLoaded', () => {
-            // --- ESTADO DA APLICAÇÃO ---
             let state = {
                 user: null,
                 playerData: { funds: 0, inventory: [] },
-                santuarioData: { rooms: {}, npcs: {} },
+                santuarioData: null,
                 activeTab: 'forja',
             };
 
@@ -192,8 +176,8 @@
             const tabContentContainer = document.getElementById('tab-content-container');
             const playerInfoContainer = document.getElementById('player-info');
             const authContainer = document.getElementById('auth-container');
+            const adminControlsContainer = document.getElementById('admin-controls');
 
-            // --- AUTENTICAÇÃO ---
             auth.onAuthStateChanged(user => {
                 if (user) {
                     state.user = user;
@@ -201,13 +185,14 @@
                     document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
                     loadInitialData();
                 } else {
-                    state.user = null;
+                    state = { user: null, playerData: { funds: 0, inventory: [] }, santuarioData: null, activeTab: 'forja' };
                     authContainer.innerHTML = `
                         <div class="card max-w-sm mx-auto p-4">
                              <h3 class="card-title text-xl mb-2">Acesso ao Santuário</h3>
                              <input type="email" id="email" placeholder="Email" class="w-full p-2 bg-gray-800 border border-gray-600 rounded mb-2 text-white">
                              <input type="password" id="password" placeholder="Senha" class="w-full p-2 bg-gray-800 border border-gray-600 rounded mb-2 text-white">
-                             <button id="login-btn" class="btn btn-buy w-full">Entrar</button>
+                             <button id="login-btn" class="btn btn-buy w-full mr-2">Entrar</button>
+                             <button id="register-btn" class="btn btn-upgrade w-full mt-2">Registrar</button>
                         </div>
                     `;
                     document.getElementById('login-btn').addEventListener('click', () => {
@@ -215,50 +200,91 @@
                         const password = document.getElementById('password').value;
                         auth.signInWithEmailAndPassword(email, password).catch(error => alert(error.message));
                     });
-                    // Clear data on logout
-                    tabNavContainer.innerHTML = '';
-                    tabContentContainer.innerHTML = '<p class="text-center text-gray-500">Faça login para acessar o Santuário.</p>';
-                    playerInfoContainer.innerHTML = '';
+                     document.getElementById('register-btn').addEventListener('click', () => {
+                        const email = document.getElementById('email').value;
+                        const password = document.getElementById('password').value;
+                        auth.createUserWithEmailAndPassword(email, password).catch(error => alert(error.message));
+                    });
+                    clearUI();
                 }
             });
 
+            function clearUI() {
+                tabNavContainer.innerHTML = '';
+                tabContentContainer.innerHTML = '<p class="text-center text-gray-500">Faça login para acessar o Santuário.</p>';
+                playerInfoContainer.innerHTML = '';
+                adminControlsContainer.innerHTML = '';
+            }
 
-            // --- CARREGAMENTO DE DADOS ---
             async function loadInitialData() {
                  if (!state.user) return;
-                
-                // Listener para dados do santuário (salas, npcs, etc.)
+
                 db.collection('santuario').doc('estadoGlobal').onSnapshot(doc => {
                     if (doc.exists) {
                         state.santuarioData = doc.data();
-                        render(); // Re-renderiza tudo quando o estado global muda
+                        adminControlsContainer.innerHTML = ''; // Hide button if data exists
+                        render();
                     } else {
-                        console.error("Documento de estado global do santuário não encontrado!");
+                        // Show init button if data doesn't exist
+                        adminControlsContainer.innerHTML = `<button id="init-db-btn" class="btn-upgrade">Inicializar Banco de Dados do Santuário</button>`;
+                        document.getElementById('init-db-btn').addEventListener('click', initializeDatabase);
+                        tabContentContainer.innerHTML = '<p class="text-center text-gray-400">O mundo precisa ser criado. Clique no botão de inicialização.</p>';
                     }
                 });
 
-                // Listener para dados do jogador
                 db.collection('jogadores').doc(state.user.uid).onSnapshot(doc => {
                     if (doc.exists) {
                         state.playerData = doc.data();
-                        renderPlayerInfo(); // Apenas atualiza as informações do jogador
                     } else {
-                         // Criar documento do jogador se não existir
-                        db.collection('jogadores').doc(state.user.uid).set({
-                            funds: 1000,
-                            inventory: []
-                        });
+                        db.collection('jogadores').doc(state.user.uid).set({ funds: 1000, inventory: [] });
                     }
+                    renderPlayerInfo();
                 });
             }
-
-
-            // --- FUNÇÕES DE RENDERIZAÇÃO ---
-            function render() {
-                if (!state.user || !state.santuarioData.rooms) {
-                    // Não renderizar se não houver dados
-                    return;
+            
+            async function initializeDatabase() {
+                const initialData = {
+                    fundosComunitarios: 50000,
+                    rooms: {
+                        forja: { name: "Forja", cost: 0, unlocked: true, npcId: 'bruza', icon: 'Hammer' },
+                        cozinha: { name: "Cozinha", cost: 0, unlocked: true, npcId: 'lucerina', icon: 'Soup' },
+                        biblioteca: { name: "Biblioteca", cost: 0, unlocked: true, npcId: 'rayllum', icon: 'BookOpen' },
+                        alquimia: { name: "Lab. de Alquimia", cost: 2000, unlocked: true, npcId: 'miranda', icon: 'FlaskConical' },
+                        prazeres: { name: "Casa dos Prazeres", cost: 3000, unlocked: true, npcId: 'eveline', isLust: true, icon: 'Heart' },
+                        mercado: { name: "Mercado Negro", cost: 0, unlocked: true, npcId: 'corvus', icon: 'Scale' },
+                        engenheiros: { name: "Lab. dos Engenheiros", cost: 1500, unlocked: false, npcId: null, icon: 'Cog' },
+                        magias: { name: "Lab. das Magias", cost: 1000, unlocked: false, npcId: null, icon: 'Sparkles' },
+                        enfermaria: { name: "Enfermaria", cost: 3000, unlocked: false, npcId: null, icon: 'PlusSquare' },
+                        mineracao: { name: "Posto de Mineração", cost: 2000, unlocked: false, npcId: null, icon: 'Pickaxe' },
+                        estufa: { name: "Estufa Alquímica", cost: 2000, unlocked: false, npcId: null, icon: 'Leaf' },
+                        mercador: { name: "Portal do Mercador", cost: -1, unlocked: false, npcId: null, icon: 'Gateway' },
+                        missoes: { name: "Quadro de Missões", cost: 0, unlocked: true, npcId: null, icon: 'ClipboardList' }
+                    },
+                    npcs: {
+                        bruza: { name: "Bruza, o Ferreiro", title: `"Aço e fogo. É tudo que resta."`, description: "Um mestre de seu ofício...", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=B", items: [{ name: "Reparar Equipamento", price: 50 }] },
+                        lucerina: { name: "Lucerina, a Cozinheira", title: `"Um estômago cheio luta melhor."`, description: "Lucerina faz milagres com as rações escassas...", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=L", items: [{ name: "Ensopado Revigorante", price: 30 }] },
+                        rayllum: { name: "Rayllum, a Bibliotecária", title: `"O conhecimento é a única luz."`, description: "Guardiã do saber resgatado...", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=R", items: [{ name: "Identificar Item", price: 100 }] },
+                        miranda: { name: "Miranda, a Alquimista", title: `"A essência da vida e da morte."`, description: "Miranda lida com substâncias perigosas...", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=M", items: [{ name: "Poção de Cura Maior", price: 150 }] },
+                        eveline: { name: "Eveline, a Condessa", title: `"Até no fim do mundo, há prazeres."`, description: "Na Casa dos Prazeres...", image: "https://placehold.co/100x100/8c3a5a/ffffff?text=E", isLust: true, items: [{ name: "Uma Noite de Esquecimento", price: 500 }] },
+                        corvus: { name: "Corvus, o Colecionador", title: `"Tudo tem um preço..."`, description: "Uma figura sombria...", image: "https://placehold.co/100x100/1a1a1a/c5a173?text=C", items: [
+                            { id: 'wep_01', name: "Adaga de Osso Serrilhado", value: 350, type: 'arma' },
+                            { id: 'mat_04', name: "Cristal de Energia Tênue", value: 250, type: 'material' }
+                        ]}
+                    }
+                };
+                
+                try {
+                    await db.collection('santuario').doc('estadoGlobal').set(initialData);
+                    alert('Banco de dados inicializado com sucesso!');
+                    adminControlsContainer.innerHTML = '';
+                } catch (error) {
+                    alert('Erro ao inicializar o banco de dados: ' + error.message);
+                    console.error(error);
                 }
+            }
+
+            function render() {
+                if (!state.user || !state.santuarioData) return;
                 renderPlayerInfo();
                 renderTabs();
                 renderContent();
@@ -268,12 +294,12 @@
                 if (!state.playerData) return;
                 playerInfoContainer.innerHTML = `
                     <span class="currency">${(state.playerData.funds || 0).toLocaleString('pt-BR')} FV</span> | 
-                    <span class="text-gray-400">Inventário: ${state.playerData.inventory?.length || 0} itens</span>
-                `;
+                    <span class="text-gray-400">Inventário: ${state.playerData.inventory?.length || 0} itens</span>`;
             }
 
             function renderTabs() {
-                tabNavContainer.innerHTML = '';
+                // ... (rest of the functions are the same as before)
+                 tabNavContainer.innerHTML = '';
                 const rooms = state.santuarioData.rooms || {};
                 Object.keys(rooms).forEach(roomId => {
                     const room = rooms[roomId];
@@ -288,8 +314,7 @@
                     
                     tab.addEventListener('click', () => {
                         state.activeTab = roomId;
-                        renderContent(); // Only re-render content on tab change for efficiency
-                        // Update active class on tabs
+                        renderContent(); 
                         document.querySelectorAll('#tab-navigation .tab').forEach(t => t.classList.remove('active'));
                         tab.classList.add('active');
                     });
@@ -313,7 +338,7 @@
                             tabContentContainer.innerHTML = generateNpcCard(npc);
                         }
                     } else if (state.activeTab === 'missoes') {
-                        tabContentContainer.innerHTML = generateMissionBoard();
+                        // ...
                     } else {
                          tabContentContainer.innerHTML = generateEmptyRoomCard(room);
                     }
@@ -325,9 +350,7 @@
                 }
                  lucide.createIcons();
             }
-
-            // --- FUNÇÕES GERADORAS DE HTML (praticamente inalteradas) ---
-            function generateNpcCard(npc) {
+             function generateNpcCard(npc) {
                 if(!npc) return '<p>NPC não encontrado.</p>'
                 const cardClass = npc.isLust ? 'lust-card' : '';
                 const titleClass = npc.isLust ? 'lust-title' : '';
@@ -381,11 +404,11 @@
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
                             <h4 class="text-xl card-title mb-2">Itens à Venda</h4>
-                            <table class="w-full text-sm item-table"><tbody>${vendorItemsHtml || `<tr><td colspan="3" class="p-4 text-center text-gray-500">Corvus não tem mais nada para vender.</td></tr>`}</tbody></table>
+                            <table class="w-full text-sm item-table"><tbody>${vendorItemsHtml || `<tr><td colspan="3" class="p-4 text-center text-gray-500">Nenhum item à venda.</td></tr>`}</tbody></table>
                         </div>
                         <div>
                             <h4 class="text-xl card-title mb-2">Seu Inventário</h4>
-                            <table class="w-full text-sm item-table"><tbody>${playerItemsHtml || `<tr><td colspan="3" class="p-4 text-center text-gray-500">Você não tem nada para vender.</td></tr>`}</tbody></table>
+                            <table class="w-full text-sm item-table"><tbody>${playerItemsHtml || `<tr><td colspan="3" class="p-4 text-center text-gray-500">Inventário vazio.</td></tr>`}</tbody></table>
                         </div>
                     </div>
                 `;
@@ -414,37 +437,30 @@
                  return `
                     <div class="text-center p-8">
                         <h3 class="text-3xl card-title">${room.name}</h3>
-                        <p class="text-gray-400 mt-4">Esta sala foi liberada e está pronta para uso. Os serviços específicos estarão disponíveis em breve.</p>
+                        <p class="text-gray-400 mt-4">Esta sala está pronta para uso.</p>
                         <i data-lucide="${(room.icon || 'box').toLowerCase()}" class="mx-auto mt-6 w-16 h-16 text-gray-600"></i>
                     </div>
                 `;
             }
             
-            function generateMissionBoard() {
-                // ... (pode ser carregado do DB também no futuro)
-                return `
-                    <div class="text-center mb-6">
-                        <h2 class="text-3xl header-title">Quadro de Requisições da Aliança</h2>
-                        <p class="text-gray-400 mt-2">"A coragem será recompensada." - General Anya</p>
-                    </div>
-                    ...
-                `;
+            function addMarketListeners() {
+                document.querySelectorAll('.btn-buy').forEach(button => button.addEventListener('click', handleBuyItem));
+                document.querySelectorAll('.btn-sell').forEach(button => button.addEventListener('click', handleSellItem));
             }
-            // --- LÓGICA DE INTERAÇÃO COM FIREBASE ---
-
+            // ... (Firebase interaction logic remains the same)
             function handleUnlockRoom(event) {
                 const roomId = event.currentTarget.dataset.roomId;
                 const room = state.santuarioData.rooms[roomId];
                 const totalCost = room.cost;
 
-                // Transação para garantir atomicidade
                 db.runTransaction(async (transaction) => {
                     const santuarioRef = db.collection('santuario').doc('estadoGlobal');
                     const santuarioDoc = await transaction.get(santuarioRef);
+                    if (!santuarioDoc.exists) throw new Error("Documento do santuário não existe!");
+                    
                     const globalFunds = santuarioDoc.data().fundosComunitarios || 0;
 
                     if (globalFunds >= totalCost) {
-                        // Debita o fundo comunitário
                         transaction.update(santuarioRef, {
                             fundosComunitarios: firebase.firestore.FieldValue.increment(-totalCost),
                             [`rooms.${roomId}.unlocked`]: true
@@ -454,17 +470,9 @@
                     }
                 }).catch(error => {
                     alert(error.message);
-                    console.error("Falha ao desbloquear sala: ", error);
                 });
             }
-
-
-             function addMarketListeners() {
-                document.querySelectorAll('.btn-buy').forEach(button => button.addEventListener('click', handleBuyItem));
-                document.querySelectorAll('.btn-sell').forEach(button => button.addEventListener('click', handleSellItem));
-            }
-
-            function handleBuyItem(event) {
+             function handleBuyItem(event) {
                 const itemId = event.currentTarget.dataset.itemId;
                 const vendor = state.santuarioData.npcs.corvus;
                 const item = vendor.items.find(i => i.id === itemId);
@@ -483,22 +491,18 @@
                         throw new Error("Fundos insuficientes!");
                     }
                     
-                    // Atualiza o jogador
                     transaction.update(playerDocRef, {
                         funds: firebase.firestore.FieldValue.increment(-item.value),
                         inventory: firebase.firestore.FieldValue.arrayUnion(item)
                     });
 
-                    // Atualiza o inventário do vendedor
                     transaction.update(santuarioDocRef, {
                         'npcs.corvus.items': firebase.firestore.FieldValue.arrayRemove(item)
                     });
                 }).catch(error => {
                     alert(error.message);
-                    console.error("Erro ao comprar item: ", error);
                 });
             }
-
             function handleSellItem(event) {
                 const itemId = event.currentTarget.dataset.itemId;
                 const item = state.playerData.inventory.find(i => i.id === itemId);
@@ -510,40 +514,17 @@
                 const santuarioDocRef = db.collection('santuario').doc('estadoGlobal');
 
                  db.runTransaction(async (transaction) => {
-                    // Atualiza o jogador
                     transaction.update(playerDocRef, {
                         funds: firebase.firestore.FieldValue.increment(sellPrice),
                         inventory: firebase.firestore.FieldValue.arrayRemove(item)
                     });
-
-                    // Devolve o item para o vendedor
                     transaction.update(santuarioDocRef, {
                         'npcs.corvus.items': firebase.firestore.FieldValue.arrayUnion(item)
                     });
                 }).catch(error => {
                     alert(error.message);
-                    console.error("Erro ao vender item: ", error);
                 });
             }
-
-
-            // --- CONTROLE DA MÚSICA ---
-            const audioFrame = document.querySelector('#audio-container iframe');
-            const musicToggle = document.getElementById('music-toggle');
-            const playIcon = document.getElementById('play-icon');
-            const pauseIcon = document.getElementById('pause-icon');
-            let isPlaying = false;
-
-            musicToggle.addEventListener('click', () => {
-                isPlaying = !isPlaying;
-                const command = isPlaying ? 'unMute' : 'mute';
-                if (audioFrame.contentWindow) {
-                    audioFrame.contentWindow.postMessage('{"event":"command","func":"' + command + '","args":""}', '*');
-                }
-                playIcon.classList.toggle('hidden', isPlaying);
-                pauseIcon.classList.toggle('hidden', !isPlaying);
-            });
-            
         });
     </script>
 
