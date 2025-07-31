@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santuário dos Expedicionários - Kuar-Tor</title>
+    <!-- Incluindo Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluindo Fontes do Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <!-- Incluindo Lucide Icons (Versão correta para JS) -->
+    <script src="https://unpkg.com/lucide/dist/umd/lucide.min.js"></script>
+
+    <style>
+        /* Estilos personalizados para um tema Dark Fantasy */
+        body {
+            background-image: url('https://www.transparenttextures.com/patterns/dark-stone-wall.png');
+            background-color: #1a1a1a;
+            font-family: 'Cinzel', serif;
+            color: #dcdcdc;
+        }
+        .header-title {
+            font-family: 'MedievalSharp', cursive;
+            color: #c5a173;
+            text-shadow: 2px 2px 4px #000;
+        }
+        .card {
+            background-color: rgba(18, 18, 18, 0.85);
+            border: 1px solid #4a3c2a;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        .card-title {
+            font-family: 'MedievalSharp', cursive;
+            color: #c5a173;
+        }
+        .currency {
+            color: #e5c100;
+            font-weight: bold;
+        }
+        .item-table th {
+            background-color: rgba(40, 30, 20, 0.7);
+            color: #c5a173;
+            font-family: 'Cinzel', serif;
+        }
+        .item-table tr {
+            border-bottom: 1px solid #4a3c2a;
+        }
+        .item-table tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+        .item-table td, .item-table th {
+            border: none;
+        }
+        .npc-image {
+            border: 3px solid #6b553a;
+            filter: sepia(0.3) contrast(1.1);
+        }
+        .btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-shadow: 1px 1px 2px #000;
+            transition: background-color 0.3s;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        .btn-buy { background-color: #3b8a5a; color: #fff; }
+        .btn-buy:hover { background-color: #4ca46e; }
+        .btn-sell { background-color: #8a3b3b; color: #fff; }
+        .btn-sell:hover { background-color: #a45454; }
+
+        .btn-upgrade {
+            background-color: #8a6d3b;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-shadow: 1px 1px 2px #000;
+            transition: background-color 0.3s;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .btn-upgrade:hover {
+            background-color: #a48454;
+        }
+        .btn-upgrade:disabled {
+            background-color: #52422b;
+            cursor: not-allowed;
+            color: #aaa;
+        }
+        /* Estilo especial para a Condessa */
+        .lust-card, .lust-tab.active {
+            border-color: #8c3a5a !important;
+            box-shadow: 0 4px 20px rgba(140, 58, 90, 0.4);
+        }
+        .lust-title { color: #e685a9; }
+        .lust-btn { background-color: #8c3a5a; }
+        .lust-btn:hover { background-color: #a74f72; }
+        
+        /* Player de Música */
+        #music-player { position: fixed; bottom: 20px; right: 20px; z-index: 100; }
+        #music-toggle {
+            background-color: rgba(18, 18, 18, 0.8);
+            border: 1px solid #c5a173;
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            cursor: pointer; display: flex; justify-content: center; align-items: center;
+        }
+        #music-toggle svg { width: 24px; height: 24px; fill: #c5a173; }
+        
+        /* Estilos das Abas */
+        .tab {
+            padding: 10px 15px; cursor: pointer; background-color: rgba(30, 30, 30, 0.5);
+            border: 1px solid #4a3c2a; border-bottom: none; border-radius: 8px 8px 0 0;
+            color: #a0a0a0; transition: all 0.3s ease; display: inline-flex;
+            align-items: center; gap: 8px;
+        }
+        .tab:hover { background-color: rgba(45, 45, 45, 0.7); color: #c5a173; }
+        .tab.active {
+            background-color: rgba(18, 18, 18, 0.85); color: #c5a173;
+            border-color: #6b553a; font-weight: bold;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+
+    <!-- Player de áudio escondido -->
+    <div id="audio-container" class="hidden">
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/fL3082aK-d0?autoplay=1&loop=1&playlist=fL3082aK-d0&controls=0&mute=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    
+    <!-- Botão de controle da música -->
+    <div id="music-player">
+        <button id="music-toggle" aria-label="Controlar música">
+            <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+            <svg id="pause-icon" class="hidden" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+        </button>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Cabeçalho -->
+        <header class="text-center mb-8">
+            <h1 class="text-5xl md:text-6xl font-bold header-title tracking-wider">Santuário dos Expedicionários</h1>
+            <p class="mt-4 text-lg text-gray-400 max-w-3xl mx-auto font-light">Nas cinzas de Kuar-Tor, a esperança é forjada em fogo e desespero.</p>
+            <div id="player-info" class="mt-4 card max-w-md mx-auto p-3 rounded-lg text-lg">
+                <!-- Informações do jogador serão inseridas aqui -->
+            </div>
+        </header>
+
+        <!-- Navegação por Abas -->
+        <nav id="tab-navigation" class="flex flex-wrap items-end -mb-px"></nav>
+
+        <!-- Conteúdo das Abas -->
+        <main id="tab-content-container" class="card rounded-lg p-6 rounded-tl-none"></main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- ESTADO DA APLICAÇÃO ---
+            const state = {
+                playerFunds: 20000,
+                playerInventory: [
+                    { id: 'mat_01', name: "Fragmento do Vazio", value: 75, type: 'material' },
+                    { id: 'mat_02', name: "Couro de Fera das Cinzas", value: 50, type: 'material' },
+                    { id: 'relic_01', name: "Olho de Vidro Rachado", value: 150, type: 'reliquia' },
+                    { id: 'cons_02', name: "Bandagens Sujas (3 usos)", value: 20, type: 'consumivel' }
+                ],
+                activeTab: 'forja',
+                rooms: {
+                    forja: { name: "Forja", cost: 0, unlocked: true, npcId: 'bruza', icon: 'Hammer' },
+                    cozinha: { name: "Cozinha", cost: 0, unlocked: true, npcId: 'lucerina', icon: 'Soup' },
+                    biblioteca: { name: "Biblioteca", cost: 0, unlocked: true, npcId: 'rayllum', icon: 'BookOpen' },
+                    alquimia: { name: "Lab. de Alquimia", cost: 2000, unlocked: true, npcId: 'miranda', icon: 'FlaskConical' },
+                    prazeres: { name: "Casa dos Prazeres", cost: 3000, unlocked: true, npcId: 'eveline', isLust: true, icon: 'Heart' },
+                    mercado: { name: "Mercado Negro", cost: 0, unlocked: true, npcId: 'corvus', icon: 'Scale' },
+                    engenheiros: { name: "Lab. dos Engenheiros", cost: 1500, unlocked: false, npcId: null, icon: 'Cog' },
+                    magias: { name: "Lab. das Magias", cost: 1000, unlocked: false, npcId: null, icon: 'Sparkles' },
+                    enfermaria: { name: "Enfermaria", cost: 3000, unlocked: false, npcId: null, icon: 'PlusSquare' },
+                    mineracao: { name: "Posto de Mineração", cost: 2000, unlocked: false, npcId: null, icon: 'Pickaxe' },
+                    estufa: { name: "Estufa Alquímica", cost: 2000, unlocked: false, npcId: null, icon: 'Leaf' },
+                    mercador: { name: "Portal do Mercador", cost: -1, unlocked: false, npcId: null, icon: 'Gateway' },
+                    missoes: { name: "Quadro de Missões", cost: 0, unlocked: true, npcId: null, icon: 'ClipboardList' }
+                },
+                npcs: {
+                    bruza: { name: "Bruza, o Ferreiro", title: `"Aço e fogo. É tudo que resta."`, description: "Um mestre de seu ofício, Bruza pode transformar sucata em lâminas mortais.", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=B", items: [{ name: "Reparar Equipamento", price: 50 }, { name: "Lâmina Serrilhada", price: 250 }, { name: "Placas de Quitina", price: 400 }] },
+                    lucerina: { name: "Lucerina, a Cozinheira", title: `"Um estômago cheio luta melhor."`, description: "Lucerina faz milagres com as rações escassas, criando refeições que aquecem a alma.", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=L", items: [{ name: "Ensopado Revigorante (+1 CON temp.)", price: 30 }, { name: "Pão de Raiz (Ração de Viagem)", price: 10 }, { name: "Chá de Ervas Raras (+1 SAB temp.)", price: 45 }] },
+                    rayllum: { name: "Rayllum, a Bibliotecária", title: `"O conhecimento é a única luz neste breu."`, description: "Guardiã do saber resgatado, Rayllum oferece pergaminhos e conhecimento arcano.", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=R", items: [{ name: "Identificar Item", price: 100 }, { name: "Pergaminho de Proteção Menor", price: 150 }, { name: "Mapa de Bestiário (Incompleto)", price: 300 }] },
+                    miranda: { name: "Miranda, a Alquimista", title: `"A essência da vida e da morte em um frasco."`, description: "Miranda lida com substâncias perigosas para criar elixires potentes e venenos mortais.", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=M", items: [{ name: "Poção de Cura Maior (4d6 PV)", price: 150 }, { name: "Frasco de Fogo Alquímico", price: 120 }, { name: "Veneno de Serpente das Cinzas", price: 200 }] },
+                    eveline: { name: "Eveline, a Condessa", title: `"Até no fim do mundo, há prazeres a serem encontrados."`, description: "Na Casa dos Prazeres, Eveline oferece um alívio fugaz das agruras de Kuar-Tor... por um preço.", image: "https://placehold.co/100x100/8c3a5a/ffffff?text=E", isLust: true, items: [{ name: "Uma Noite de Esquecimento (cura de stress)", price: 500 }, { name: "Um Segredo Sussurrado (dica de lore)", price: 350 }, { name: "Favor da Condessa (+1 CAR temp.)", price: 700 }] },
+                    corvus: { name: "Corvus, o Colecionador", title: `"Tudo tem um preço... especialmente o que não deveria estar à venda."`, description: "Uma figura sombria que sempre parece ter exatamente o que você precisa, ou o que você nem sabia que queria.", image: "https://placehold.co/100x100/1a1a1a/c5a173?text=C", items: [
+                        { id: 'wep_01', name: "Adaga de Osso Serrilhado", value: 350, type: 'arma' },
+                        { id: 'wep_02', name: "Machado Pesado de Sucata", value: 450, type: 'arma' },
+                        { id: 'arm_01', name: "Manto do Desbravador", value: 500, type: 'armadura' },
+                        { id: 'arm_02', name: "Escudo de Placa de Metal", value: 300, type: 'armadura' },
+                        { id: 'relic_02', name: "Lanterna de Alma-Penada", value: 1200, type: 'reliquia' },
+                        { id: 'relic_03', name: "Amuleto de Dente de Fera", value: 600, type: 'reliquia' },
+                        { id: 'cons_01', name: "Pó do Esquecimento (1 uso)", value: 200, type: 'consumivel' },
+                        { id: 'cons_03', name: "Estimulante Alquímico Instável", value: 180, type: 'consumivel' },
+                        { id: 'mat_03', name: "Peça de Autômato Danificada", value: 120, type: 'material' },
+                        { id: 'mat_04', name: "Cristal de Energia Tênue", value: 250, type: 'material' }
+                    ]}
+                }
+            };
+
+            const tabNavContainer = document.getElementById('tab-navigation');
+            const tabContentContainer = document.getElementById('tab-content-container');
+            const playerInfoContainer = document.getElementById('player-info');
+
+            // --- FUNÇÕES DE RENDERIZAÇÃO ---
+            function render() {
+                renderPlayerInfo();
+                renderTabs();
+                renderContent();
+            }
+
+            function renderPlayerInfo() {
+                playerInfoContainer.innerHTML = `
+                    <span class="currency">${state.playerFunds.toLocaleString('pt-BR')} FV</span> | 
+                    <span class="text-gray-400">Inventário: ${state.playerInventory.length} itens</span>
+                `;
+            }
+
+            function renderTabs() {
+                tabNavContainer.innerHTML = '';
+                Object.keys(state.rooms).forEach(roomId => {
+                    const room = state.rooms[roomId];
+                    const isActive = state.activeTab === roomId;
+                    const isLust = room.isLust;
+                    const tab = document.createElement('button');
+                    tab.dataset.tabId = roomId;
+                    tab.className = `tab ${isActive ? 'active' : ''} ${isLust ? 'lust-tab' : ''}`;
+                    
+                    let iconName = room.unlocked ? room.icon : 'Lock';
+                    tab.innerHTML = `<i data-lucide="${iconName.toLowerCase()}"></i> ${room.name}`;
+                    
+                    tab.addEventListener('click', () => {
+                        state.activeTab = roomId;
+                        render();
+                    });
+                    tabNavContainer.appendChild(tab);
+                });
+                lucide.createIcons();
+            }
+
+            function renderContent() {
+                tabContentContainer.innerHTML = '';
+                const room = state.rooms[state.activeTab];
+                if (!room) return;
+
+                if (room.unlocked) {
+                    if (room.npcId) {
+                        const npc = state.npcs[room.npcId];
+                        if (state.activeTab === 'mercado') {
+                            tabContentContainer.innerHTML = generateMarketCard(npc);
+                            addMarketListeners();
+                        } else {
+                            tabContentContainer.innerHTML = generateNpcCard(npc);
+                        }
+                    } else if (state.activeTab === 'missoes') {
+                        tabContentContainer.innerHTML = generateMissionBoard();
+                    } else {
+                         tabContentContainer.innerHTML = generateEmptyRoomCard(room);
+                    }
+                } else {
+                    tabContentContainer.innerHTML = generateUnlockCard(room, state.activeTab);
+                    if (room.cost > 0) {
+                        document.getElementById(`unlock-btn-${state.activeTab}`).addEventListener('click', handleUnlockRoom);
+                    }
+                }
+                 lucide.createIcons();
+            }
+            
+            // --- FUNÇÕES GERADORAS DE HTML ---
+            function generateNpcCard(npc) {
+                const cardClass = npc.isLust ? 'lust-card' : '';
+                const titleClass = npc.isLust ? 'lust-title' : '';
+                const imgBorder = npc.isLust ? 'style="border-color: #e685a9;"' : '';
+                const itemsHtml = npc.items.map(item => `
+                    <tr>
+                        <td class="p-2">${item.name}</td>
+                        <td class="p-2 text-right"><span class="currency">${item.price.toLocaleString('pt-BR')} FV</span></td>
+                    </tr>`).join('');
+                
+                return `
+                    <div class="rounded-lg overflow-hidden ${cardClass}">
+                        <div class="p-6">
+                            <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
+                                <img src="${npc.image}" alt="Retrato de ${npc.name}" class="w-24 h-24 rounded-full object-cover npc-image" ${imgBorder}>
+                                <div class="text-center sm:text-left">
+                                    <h3 class="text-3xl card-title ${titleClass}">${npc.name}</h3>
+                                    <p class="text-sm text-gray-400 italic">${npc.title}</p>
+                                </div>
+                            </div>
+                            <p class="text-gray-300 mb-4 text-sm text-center sm:text-left">${npc.description}</p>
+                            <table class="w-full text-sm item-table"><tbody>${itemsHtml}</tbody></table>
+                        </div>
+                    </div>`;
+            }
+
+            function generateMarketCard(npc) {
+                const vendorItemsHtml = npc.items.map((item, index) => `
+                    <tr>
+                        <td class="p-2">${item.name}</td>
+                        <td class="p-2 text-right"><span class="currency">${item.value.toLocaleString('pt-BR')} FV</span></td>
+                        <td class="p-2 text-right"><button class="btn btn-buy" data-item-index="${index}">Comprar</button></td>
+                    </tr>`).join('');
+
+                const playerItemsHtml = state.playerInventory.map((item, index) => `
+                     <tr>
+                        <td class="p-2">${item.name}</td>
+                        <td class="p-2 text-right"><span class="currency">${Math.floor(item.value / 2).toLocaleString('pt-BR')} FV</span></td>
+                        <td class="p-2 text-right"><button class="btn btn-sell" data-item-index="${index}">Vender</button></td>
+                    </tr>`).join('');
+
+                return `
+                    <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+                        <img src="${npc.image}" alt="Retrato de ${npc.name}" class="w-24 h-24 rounded-full object-cover npc-image">
+                        <div class="text-center sm:text-left">
+                            <h3 class="text-3xl card-title">${npc.name}</h3>
+                            <p class="text-sm text-gray-400 italic">${npc.title}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="text-xl card-title mb-2">Itens à Venda</h4>
+                            <table class="w-full text-sm item-table"><tbody>${vendorItemsHtml || `<tr><td colspan="3" class="p-4 text-center text-gray-500">Corvus não tem mais nada para vender.</td></tr>`}</tbody></table>
+                        </div>
+                        <div>
+                            <h4 class="text-xl card-title mb-2">Seu Inventário</h4>
+                            <table class="w-full text-sm item-table"><tbody>${playerItemsHtml || `<tr><td colspan="3" class="p-4 text-center text-gray-500">Você não tem nada para vender.</td></tr>`}</tbody></table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function generateUnlockCard(room, roomId) {
+                 const btnClass = room.isLust ? 'lust-btn' : '';
+                 let buttonHtml;
+                 if (room.cost === -1) {
+                     buttonHtml = `<button class="btn-upgrade w-full mt-4" disabled>Requer Missão</button>`;
+                 } else {
+                     buttonHtml = `<button id="unlock-btn-${roomId}" data-room-id="${roomId}" class="btn-upgrade w-full mt-4 ${btnClass}">Liberar por <span class="currency">${room.cost.toLocaleString('pt-BR')} FV</span></button>`;
+                 }
+
+                return `
+                    <div class="text-center p-8">
+                        <i data-lucide="lock" class="mx-auto w-16 h-16 text-gray-500"></i>
+                        <h3 class="text-3xl card-title mt-4">Sala Bloqueada: ${room.name}</h3>
+                        <p class="text-gray-400 mt-2">Esta área do Santuário ainda não foi restaurada.</p>
+                        ${buttonHtml}
+                    </div>
+                `;
+            }
+
+            function generateEmptyRoomCard(room) {
+                return `
+                    <div class="text-center p-8">
+                        <h3 class="text-3xl card-title">${room.name}</h3>
+                        <p class="text-gray-400 mt-4">Esta sala foi liberada e está pronta para uso. Os serviços específicos estarão disponíveis em breve.</p>
+                        <i data-lucide="${room.icon.toLowerCase()}" class="mx-auto mt-6 w-16 h-16 text-gray-600"></i>
+                    </div>
+                `;
+            }
+
+            function generateMissionBoard() {
+                return `
+                    <div class="text-center mb-6">
+                        <h2 class="text-3xl header-title">Quadro de Requisições da Aliança</h2>
+                        <p class="text-gray-400 mt-2">"A coragem será recompensada." - General Anya</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm item-table text-center">
+                            <thead><tr><th class="p-3">Oportunidade</th><th class="p-3">Descrição</th><th class="p-3">Recompensa / Custo</th></tr></thead>
+                            <tbody>
+                                <tr><td class="p-3 font-semibold">[PROCURA-SE] Coração de Ferro do Vazio</td><td class="p-3 text-gray-300">Necessário para forjar uma arma poderosa. Encontrado em "Brutos Despedaçadores".</td><td class="p-3"><span class="currency">1000 FV</span></td></tr>
+                                <tr><td class="p-3 font-semibold">[À VENDA] Adaga das 1000 Almas</td><td class="p-3 text-gray-300">Relíquia que sussurra promessas de poder. Use por sua conta e risco.</td><td class="p-3"><span class="currency">3000 FV</span></td></tr>
+                                <tr><td class="p-3 font-semibold">[MISSÃO] Reconhecimento em Portirus</td><td class="p-3 text-gray-300">Investigue o silêncio na cidade portuária. Relate ameaças e a situação da Névoa Escarlate.</td><td class="p-3"><span class="currency">800 FV</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // --- LÓGICA DE INTERAÇÃO ---
+            function handleUnlockRoom(event) {
+                const roomId = event.currentTarget.dataset.roomId;
+                const room = state.rooms[roomId];
+
+                if (state.playerFunds >= room.cost) {
+                    state.playerFunds -= room.cost;
+                    room.unlocked = true;
+                    render();
+                } else {
+                    alert("Fundos da Aliança insuficientes!");
+                }
+            }
+
+            function addMarketListeners() {
+                document.querySelectorAll('.btn-buy').forEach(button => button.addEventListener('click', handleBuyItem));
+                document.querySelectorAll('.btn-sell').forEach(button => button.addEventListener('click', handleSellItem));
+            }
+
+            function handleBuyItem(event) {
+                const itemIndex = parseInt(event.currentTarget.dataset.itemIndex);
+                const vendor = state.npcs.corvus;
+                const item = vendor.items[itemIndex];
+
+                if (state.playerFunds >= item.value) {
+                    state.playerFunds -= item.value;
+                    state.playerInventory.push(item);
+                    vendor.items.splice(itemIndex, 1); // Remove from vendor
+                    render();
+                } else {
+                    alert("Fundos insuficientes!");
+                }
+            }
+
+            function handleSellItem(event) {
+                const itemIndex = parseInt(event.currentTarget.dataset.itemIndex);
+                const item = state.playerInventory[itemIndex];
+                const sellPrice = Math.floor(item.value / 2);
+
+                state.playerFunds += sellPrice;
+                state.npcs.corvus.items.push(item); // Add back to vendor
+                state.playerInventory.splice(itemIndex, 1); // Remove from player
+                render();
+            }
+
+            // --- CONTROLE DA MÚSICA ---
+            const audioFrame = document.querySelector('#audio-container iframe');
+            const musicToggle = document.getElementById('music-toggle');
+            const playIcon = document.getElementById('play-icon');
+            const pauseIcon = document.getElementById('pause-icon');
+            let isPlaying = false;
+
+            musicToggle.addEventListener('click', () => {
+                isPlaying = !isPlaying;
+                const command = isPlaying ? 'unMute' : 'mute';
+                if (audioFrame.contentWindow) {
+                    audioFrame.contentWindow.postMessage('{"event":"command","func":"' + command + '","args":""}', '*');
+                }
+                playIcon.classList.toggle('hidden', isPlaying);
+                pauseIcon.classList.toggle('hidden', !isPlaying);
+            });
+
+            // --- INICIALIZAÇÃO ---
+            render();
+        });
+    </script>
+
+</body>
+</html>
