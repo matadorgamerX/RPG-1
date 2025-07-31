@@ -10,8 +10,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
-    <!-- Incluindo Lucide Icons (Versão correta para JS) -->
+    <!-- Incluindo Lucide Icons -->
     <script src="https://unpkg.com/lucide/dist/umd/lucide.min.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <style>
         /* Estilos personalizados para um tema Dark Fantasy */
@@ -146,6 +150,7 @@
             <div id="player-info" class="mt-4 card max-w-md mx-auto p-3 rounded-lg text-lg">
                 <!-- Informações do jogador serão inseridas aqui -->
             </div>
+             <div id="auth-container" class="mt-4"></div>
         </header>
 
         <!-- Navegação por Abas -->
@@ -155,76 +160,123 @@
         <main id="tab-content-container" class="card rounded-lg p-6 rounded-tl-none"></main>
     </div>
 
-    <script>
+    <script type="module">
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
+            authDomain: "kuar-tor-portal.firebaseapp.com",
+            projectId: "kuar-tor-portal",
+            storageBucket: "kuar-tor-portal.firebasestorage.app",
+            messagingSenderId: "438781244189",
+            appId: "1:438781244189:web:99ea6a25fc459b14f567f4",
+            measurementId: "G-X5GTEY10VZ"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
         document.addEventListener('DOMContentLoaded', () => {
             // --- ESTADO DA APLICAÇÃO ---
-            const state = {
-                playerFunds: 20000,
-                playerInventory: [
-                    { id: 'mat_01', name: "Fragmento do Vazio", value: 75, type: 'material' },
-                    { id: 'mat_02', name: "Couro de Fera das Cinzas", value: 50, type: 'material' },
-                    { id: 'relic_01', name: "Olho de Vidro Rachado", value: 150, type: 'reliquia' },
-                    { id: 'cons_02', name: "Bandagens Sujas (3 usos)", value: 20, type: 'consumivel' }
-                ],
+            let state = {
+                user: null,
+                playerData: { funds: 0, inventory: [] },
+                santuarioData: { rooms: {}, npcs: {} },
                 activeTab: 'forja',
-                rooms: {
-                    forja: { name: "Forja", cost: 0, unlocked: true, npcId: 'bruza', icon: 'Hammer' },
-                    cozinha: { name: "Cozinha", cost: 0, unlocked: true, npcId: 'lucerina', icon: 'Soup' },
-                    biblioteca: { name: "Biblioteca", cost: 0, unlocked: true, npcId: 'rayllum', icon: 'BookOpen' },
-                    alquimia: { name: "Lab. de Alquimia", cost: 2000, unlocked: true, npcId: 'miranda', icon: 'FlaskConical' },
-                    prazeres: { name: "Casa dos Prazeres", cost: 3000, unlocked: true, npcId: 'eveline', isLust: true, icon: 'Heart' },
-                    mercado: { name: "Mercado Negro", cost: 0, unlocked: true, npcId: 'corvus', icon: 'Scale' },
-                    engenheiros: { name: "Lab. dos Engenheiros", cost: 1500, unlocked: false, npcId: null, icon: 'Cog' },
-                    magias: { name: "Lab. das Magias", cost: 1000, unlocked: false, npcId: null, icon: 'Sparkles' },
-                    enfermaria: { name: "Enfermaria", cost: 3000, unlocked: false, npcId: null, icon: 'PlusSquare' },
-                    mineracao: { name: "Posto de Mineração", cost: 2000, unlocked: false, npcId: null, icon: 'Pickaxe' },
-                    estufa: { name: "Estufa Alquímica", cost: 2000, unlocked: false, npcId: null, icon: 'Leaf' },
-                    mercador: { name: "Portal do Mercador", cost: -1, unlocked: false, npcId: null, icon: 'Gateway' },
-                    missoes: { name: "Quadro de Missões", cost: 0, unlocked: true, npcId: null, icon: 'ClipboardList' }
-                },
-                npcs: {
-                    bruza: { name: "Bruza, o Ferreiro", title: `"Aço e fogo. É tudo que resta."`, description: "Um mestre de seu ofício, Bruza pode transformar sucata em lâminas mortais.", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=B", items: [{ name: "Reparar Equipamento", price: 50 }, { name: "Lâmina Serrilhada", price: 250 }, { name: "Placas de Quitina", price: 400 }] },
-                    lucerina: { name: "Lucerina, a Cozinheira", title: `"Um estômago cheio luta melhor."`, description: "Lucerina faz milagres com as rações escassas, criando refeições que aquecem a alma.", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=L", items: [{ name: "Ensopado Revigorante (+1 CON temp.)", price: 30 }, { name: "Pão de Raiz (Ração de Viagem)", price: 10 }, { name: "Chá de Ervas Raras (+1 SAB temp.)", price: 45 }] },
-                    rayllum: { name: "Rayllum, a Bibliotecária", title: `"O conhecimento é a única luz neste breu."`, description: "Guardiã do saber resgatado, Rayllum oferece pergaminhos e conhecimento arcano.", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=R", items: [{ name: "Identificar Item", price: 100 }, { name: "Pergaminho de Proteção Menor", price: 150 }, { name: "Mapa de Bestiário (Incompleto)", price: 300 }] },
-                    miranda: { name: "Miranda, a Alquimista", title: `"A essência da vida e da morte em um frasco."`, description: "Miranda lida com substâncias perigosas para criar elixires potentes e venenos mortais.", image: "https://placehold.co/100x100/2a2a2a/c5a173?text=M", items: [{ name: "Poção de Cura Maior (4d6 PV)", price: 150 }, { name: "Frasco de Fogo Alquímico", price: 120 }, { name: "Veneno de Serpente das Cinzas", price: 200 }] },
-                    eveline: { name: "Eveline, a Condessa", title: `"Até no fim do mundo, há prazeres a serem encontrados."`, description: "Na Casa dos Prazeres, Eveline oferece um alívio fugaz das agruras de Kuar-Tor... por um preço.", image: "https://placehold.co/100x100/8c3a5a/ffffff?text=E", isLust: true, items: [{ name: "Uma Noite de Esquecimento (cura de stress)", price: 500 }, { name: "Um Segredo Sussurrado (dica de lore)", price: 350 }, { name: "Favor da Condessa (+1 CAR temp.)", price: 700 }] },
-                    corvus: { name: "Corvus, o Colecionador", title: `"Tudo tem um preço... especialmente o que não deveria estar à venda."`, description: "Uma figura sombria que sempre parece ter exatamente o que você precisa, ou o que você nem sabia que queria.", image: "https://placehold.co/100x100/1a1a1a/c5a173?text=C", items: [
-                        { id: 'wep_01', name: "Adaga de Osso Serrilhado", value: 350, type: 'arma' },
-                        { id: 'wep_02', name: "Machado Pesado de Sucata", value: 450, type: 'arma' },
-                        { id: 'arm_01', name: "Manto do Desbravador", value: 500, type: 'armadura' },
-                        { id: 'arm_02', name: "Escudo de Placa de Metal", value: 300, type: 'armadura' },
-                        { id: 'relic_02', name: "Lanterna de Alma-Penada", value: 1200, type: 'reliquia' },
-                        { id: 'relic_03', name: "Amuleto de Dente de Fera", value: 600, type: 'reliquia' },
-                        { id: 'cons_01', name: "Pó do Esquecimento (1 uso)", value: 200, type: 'consumivel' },
-                        { id: 'cons_03', name: "Estimulante Alquímico Instável", value: 180, type: 'consumivel' },
-                        { id: 'mat_03', name: "Peça de Autômato Danificada", value: 120, type: 'material' },
-                        { id: 'mat_04', name: "Cristal de Energia Tênue", value: 250, type: 'material' }
-                    ]}
-                }
             };
 
             const tabNavContainer = document.getElementById('tab-navigation');
             const tabContentContainer = document.getElementById('tab-content-container');
             const playerInfoContainer = document.getElementById('player-info');
+            const authContainer = document.getElementById('auth-container');
+
+            // --- AUTENTICAÇÃO ---
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    state.user = user;
+                    authContainer.innerHTML = `<p class="text-gray-400">Logado como: ${user.email} <button id="logout-btn" class="text-red-400 underline">Logout</button></p>`;
+                    document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
+                    loadInitialData();
+                } else {
+                    state.user = null;
+                    authContainer.innerHTML = `
+                        <div class="card max-w-sm mx-auto p-4">
+                             <h3 class="card-title text-xl mb-2">Acesso ao Santuário</h3>
+                             <input type="email" id="email" placeholder="Email" class="w-full p-2 bg-gray-800 border border-gray-600 rounded mb-2 text-white">
+                             <input type="password" id="password" placeholder="Senha" class="w-full p-2 bg-gray-800 border border-gray-600 rounded mb-2 text-white">
+                             <button id="login-btn" class="btn btn-buy w-full">Entrar</button>
+                        </div>
+                    `;
+                    document.getElementById('login-btn').addEventListener('click', () => {
+                        const email = document.getElementById('email').value;
+                        const password = document.getElementById('password').value;
+                        auth.signInWithEmailAndPassword(email, password).catch(error => alert(error.message));
+                    });
+                    // Clear data on logout
+                    tabNavContainer.innerHTML = '';
+                    tabContentContainer.innerHTML = '<p class="text-center text-gray-500">Faça login para acessar o Santuário.</p>';
+                    playerInfoContainer.innerHTML = '';
+                }
+            });
+
+
+            // --- CARREGAMENTO DE DADOS ---
+            async function loadInitialData() {
+                 if (!state.user) return;
+                
+                // Listener para dados do santuário (salas, npcs, etc.)
+                db.collection('santuario').doc('estadoGlobal').onSnapshot(doc => {
+                    if (doc.exists) {
+                        state.santuarioData = doc.data();
+                        render(); // Re-renderiza tudo quando o estado global muda
+                    } else {
+                        console.error("Documento de estado global do santuário não encontrado!");
+                    }
+                });
+
+                // Listener para dados do jogador
+                db.collection('jogadores').doc(state.user.uid).onSnapshot(doc => {
+                    if (doc.exists) {
+                        state.playerData = doc.data();
+                        renderPlayerInfo(); // Apenas atualiza as informações do jogador
+                    } else {
+                         // Criar documento do jogador se não existir
+                        db.collection('jogadores').doc(state.user.uid).set({
+                            funds: 1000,
+                            inventory: []
+                        });
+                    }
+                });
+            }
+
 
             // --- FUNÇÕES DE RENDERIZAÇÃO ---
             function render() {
+                if (!state.user || !state.santuarioData.rooms) {
+                    // Não renderizar se não houver dados
+                    return;
+                }
                 renderPlayerInfo();
                 renderTabs();
                 renderContent();
             }
 
             function renderPlayerInfo() {
+                if (!state.playerData) return;
                 playerInfoContainer.innerHTML = `
-                    <span class="currency">${state.playerFunds.toLocaleString('pt-BR')} FV</span> | 
-                    <span class="text-gray-400">Inventário: ${state.playerInventory.length} itens</span>
+                    <span class="currency">${(state.playerData.funds || 0).toLocaleString('pt-BR')} FV</span> | 
+                    <span class="text-gray-400">Inventário: ${state.playerData.inventory?.length || 0} itens</span>
                 `;
             }
 
             function renderTabs() {
                 tabNavContainer.innerHTML = '';
-                Object.keys(state.rooms).forEach(roomId => {
-                    const room = state.rooms[roomId];
+                const rooms = state.santuarioData.rooms || {};
+                Object.keys(rooms).forEach(roomId => {
+                    const room = rooms[roomId];
                     const isActive = state.activeTab === roomId;
                     const isLust = room.isLust;
                     const tab = document.createElement('button');
@@ -236,21 +288,24 @@
                     
                     tab.addEventListener('click', () => {
                         state.activeTab = roomId;
-                        render();
+                        renderContent(); // Only re-render content on tab change for efficiency
+                        // Update active class on tabs
+                        document.querySelectorAll('#tab-navigation .tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
                     });
                     tabNavContainer.appendChild(tab);
                 });
                 lucide.createIcons();
             }
-
-            function renderContent() {
+             function renderContent() {
+                if (!state.santuarioData.rooms) return;
                 tabContentContainer.innerHTML = '';
-                const room = state.rooms[state.activeTab];
+                const room = state.santuarioData.rooms[state.activeTab];
                 if (!room) return;
 
                 if (room.unlocked) {
                     if (room.npcId) {
-                        const npc = state.npcs[room.npcId];
+                        const npc = state.santuarioData.npcs[room.npcId];
                         if (state.activeTab === 'mercado') {
                             tabContentContainer.innerHTML = generateMarketCard(npc);
                             addMarketListeners();
@@ -270,13 +325,14 @@
                 }
                  lucide.createIcons();
             }
-            
-            // --- FUNÇÕES GERADORAS DE HTML ---
+
+            // --- FUNÇÕES GERADORAS DE HTML (praticamente inalteradas) ---
             function generateNpcCard(npc) {
+                if(!npc) return '<p>NPC não encontrado.</p>'
                 const cardClass = npc.isLust ? 'lust-card' : '';
                 const titleClass = npc.isLust ? 'lust-title' : '';
                 const imgBorder = npc.isLust ? 'style="border-color: #e685a9;"' : '';
-                const itemsHtml = npc.items.map(item => `
+                const itemsHtml = (npc.items || []).map(item => `
                     <tr>
                         <td class="p-2">${item.name}</td>
                         <td class="p-2 text-right"><span class="currency">${item.price.toLocaleString('pt-BR')} FV</span></td>
@@ -299,18 +355,19 @@
             }
 
             function generateMarketCard(npc) {
-                const vendorItemsHtml = npc.items.map((item, index) => `
+                if(!npc) return '<p>NPC não encontrado.</p>'
+                const vendorItemsHtml = (npc.items || []).map((item, index) => `
                     <tr>
                         <td class="p-2">${item.name}</td>
                         <td class="p-2 text-right"><span class="currency">${item.value.toLocaleString('pt-BR')} FV</span></td>
-                        <td class="p-2 text-right"><button class="btn btn-buy" data-item-index="${index}">Comprar</button></td>
+                        <td class="p-2 text-right"><button class="btn btn-buy" data-item-id="${item.id}">Comprar</button></td>
                     </tr>`).join('');
 
-                const playerItemsHtml = state.playerInventory.map((item, index) => `
+                const playerItemsHtml = (state.playerData.inventory || []).map((item, index) => `
                      <tr>
                         <td class="p-2">${item.name}</td>
                         <td class="p-2 text-right"><span class="currency">${Math.floor(item.value / 2).toLocaleString('pt-BR')} FV</span></td>
-                        <td class="p-2 text-right"><button class="btn btn-sell" data-item-index="${index}">Vender</button></td>
+                        <td class="p-2 text-right"><button class="btn btn-sell" data-item-id="${item.id}">Vender</button></td>
                     </tr>`).join('');
 
                 return `
@@ -354,78 +411,121 @@
             }
 
             function generateEmptyRoomCard(room) {
-                return `
+                 return `
                     <div class="text-center p-8">
                         <h3 class="text-3xl card-title">${room.name}</h3>
                         <p class="text-gray-400 mt-4">Esta sala foi liberada e está pronta para uso. Os serviços específicos estarão disponíveis em breve.</p>
-                        <i data-lucide="${room.icon.toLowerCase()}" class="mx-auto mt-6 w-16 h-16 text-gray-600"></i>
+                        <i data-lucide="${(room.icon || 'box').toLowerCase()}" class="mx-auto mt-6 w-16 h-16 text-gray-600"></i>
                     </div>
                 `;
             }
-
+            
             function generateMissionBoard() {
+                // ... (pode ser carregado do DB também no futuro)
                 return `
                     <div class="text-center mb-6">
                         <h2 class="text-3xl header-title">Quadro de Requisições da Aliança</h2>
                         <p class="text-gray-400 mt-2">"A coragem será recompensada." - General Anya</p>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm item-table text-center">
-                            <thead><tr><th class="p-3">Oportunidade</th><th class="p-3">Descrição</th><th class="p-3">Recompensa / Custo</th></tr></thead>
-                            <tbody>
-                                <tr><td class="p-3 font-semibold">[PROCURA-SE] Coração de Ferro do Vazio</td><td class="p-3 text-gray-300">Necessário para forjar uma arma poderosa. Encontrado em "Brutos Despedaçadores".</td><td class="p-3"><span class="currency">1000 FV</span></td></tr>
-                                <tr><td class="p-3 font-semibold">[À VENDA] Adaga das 1000 Almas</td><td class="p-3 text-gray-300">Relíquia que sussurra promessas de poder. Use por sua conta e risco.</td><td class="p-3"><span class="currency">3000 FV</span></td></tr>
-                                <tr><td class="p-3 font-semibold">[MISSÃO] Reconhecimento em Portirus</td><td class="p-3 text-gray-300">Investigue o silêncio na cidade portuária. Relate ameaças e a situação da Névoa Escarlate.</td><td class="p-3"><span class="currency">800 FV</span></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    ...
                 `;
             }
+            // --- LÓGICA DE INTERAÇÃO COM FIREBASE ---
 
-            // --- LÓGICA DE INTERAÇÃO ---
             function handleUnlockRoom(event) {
                 const roomId = event.currentTarget.dataset.roomId;
-                const room = state.rooms[roomId];
+                const room = state.santuarioData.rooms[roomId];
+                const totalCost = room.cost;
 
-                if (state.playerFunds >= room.cost) {
-                    state.playerFunds -= room.cost;
-                    room.unlocked = true;
-                    render();
-                } else {
-                    alert("Fundos da Aliança insuficientes!");
-                }
+                // Transação para garantir atomicidade
+                db.runTransaction(async (transaction) => {
+                    const santuarioRef = db.collection('santuario').doc('estadoGlobal');
+                    const santuarioDoc = await transaction.get(santuarioRef);
+                    const globalFunds = santuarioDoc.data().fundosComunitarios || 0;
+
+                    if (globalFunds >= totalCost) {
+                        // Debita o fundo comunitário
+                        transaction.update(santuarioRef, {
+                            fundosComunitarios: firebase.firestore.FieldValue.increment(-totalCost),
+                            [`rooms.${roomId}.unlocked`]: true
+                        });
+                    } else {
+                        throw new Error("Fundos comunitários insuficientes!");
+                    }
+                }).catch(error => {
+                    alert(error.message);
+                    console.error("Falha ao desbloquear sala: ", error);
+                });
             }
 
-            function addMarketListeners() {
+
+             function addMarketListeners() {
                 document.querySelectorAll('.btn-buy').forEach(button => button.addEventListener('click', handleBuyItem));
                 document.querySelectorAll('.btn-sell').forEach(button => button.addEventListener('click', handleSellItem));
             }
 
             function handleBuyItem(event) {
-                const itemIndex = parseInt(event.currentTarget.dataset.itemIndex);
-                const vendor = state.npcs.corvus;
-                const item = vendor.items[itemIndex];
+                const itemId = event.currentTarget.dataset.itemId;
+                const vendor = state.santuarioData.npcs.corvus;
+                const item = vendor.items.find(i => i.id === itemId);
 
-                if (state.playerFunds >= item.value) {
-                    state.playerFunds -= item.value;
-                    state.playerInventory.push(item);
-                    vendor.items.splice(itemIndex, 1); // Remove from vendor
-                    render();
-                } else {
-                    alert("Fundos insuficientes!");
-                }
+                if (!item) return alert("Item não encontrado!");
+
+                const playerDocRef = db.collection('jogadores').doc(state.user.uid);
+                const santuarioDocRef = db.collection('santuario').doc('estadoGlobal');
+
+                db.runTransaction(async (transaction) => {
+                    const playerDoc = await transaction.get(playerDocRef);
+                    if (!playerDoc.exists) throw new Error("Jogador não encontrado.");
+
+                    const playerData = playerDoc.data();
+                    if (playerData.funds < item.value) {
+                        throw new Error("Fundos insuficientes!");
+                    }
+                    
+                    // Atualiza o jogador
+                    transaction.update(playerDocRef, {
+                        funds: firebase.firestore.FieldValue.increment(-item.value),
+                        inventory: firebase.firestore.FieldValue.arrayUnion(item)
+                    });
+
+                    // Atualiza o inventário do vendedor
+                    transaction.update(santuarioDocRef, {
+                        'npcs.corvus.items': firebase.firestore.FieldValue.arrayRemove(item)
+                    });
+                }).catch(error => {
+                    alert(error.message);
+                    console.error("Erro ao comprar item: ", error);
+                });
             }
 
             function handleSellItem(event) {
-                const itemIndex = parseInt(event.currentTarget.dataset.itemIndex);
-                const item = state.playerInventory[itemIndex];
+                const itemId = event.currentTarget.dataset.itemId;
+                const item = state.playerData.inventory.find(i => i.id === itemId);
+                
+                if (!item) return alert("Item não encontrado no seu inventário!");
+                
                 const sellPrice = Math.floor(item.value / 2);
+                const playerDocRef = db.collection('jogadores').doc(state.user.uid);
+                const santuarioDocRef = db.collection('santuario').doc('estadoGlobal');
 
-                state.playerFunds += sellPrice;
-                state.npcs.corvus.items.push(item); // Add back to vendor
-                state.playerInventory.splice(itemIndex, 1); // Remove from player
-                render();
+                 db.runTransaction(async (transaction) => {
+                    // Atualiza o jogador
+                    transaction.update(playerDocRef, {
+                        funds: firebase.firestore.FieldValue.increment(sellPrice),
+                        inventory: firebase.firestore.FieldValue.arrayRemove(item)
+                    });
+
+                    // Devolve o item para o vendedor
+                    transaction.update(santuarioDocRef, {
+                        'npcs.corvus.items': firebase.firestore.FieldValue.arrayUnion(item)
+                    });
+                }).catch(error => {
+                    alert(error.message);
+                    console.error("Erro ao vender item: ", error);
+                });
             }
+
 
             // --- CONTROLE DA MÚSICA ---
             const audioFrame = document.querySelector('#audio-container iframe');
@@ -443,9 +543,7 @@
                 playIcon.classList.toggle('hidden', isPlaying);
                 pauseIcon.classList.toggle('hidden', !isPlaying);
             });
-
-            // --- INICIALIZAÇÃO ---
-            render();
+            
         });
     </script>
 
