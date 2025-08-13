@@ -141,7 +141,7 @@
                 loginError.textContent = '';
                 auth.signInWithEmailAndPassword(email, password)
                     .then(() => {
-                        window.location.href = './Rascunhos/terminal da aliança.html';
+                        window.location.href = 'main.html';
                     })
                     .catch(() => {
                         loginError.textContent = "Credenciais inválidas.";
@@ -169,7 +169,7 @@
                     })
                     .then(() => {
                         // Redirect after profile is updated
-                        window.location.href = './Rascunhos/terminal da aliança.html';
+                        window.location.href = 'main.html';
                     })
                     .catch((error) => {
                         if (error.code == 'auth/weak-password') {
