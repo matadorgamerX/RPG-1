@@ -1,14 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acesso ao Portal - Kuar-Tor</title>
+    <title>Login - Kuar-Tor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -17,7 +14,7 @@
             color: #d1d5db;
         }
         .font-cinzel { font-family: 'Cinzel', serif; }
-        .main-container {
+        .login-container {
             background-color: rgba(10, 10, 10, 0.7);
             backdrop-filter: blur(5px);
             border: 1px solid rgba(220, 38, 38, 0.2);
@@ -32,156 +29,52 @@
             box-shadow: 0 0 0 2px #ef444460;
             outline: none;
         }
-        .submit-button {
-            background-color: #991b1b;
-            transition: background-color 0.3s;
+        .btn {
+            transition: all 0.2s ease-in-out;
+            font-family: 'Cinzel', serif;
         }
-        .submit-button:hover {
-            background-color: #b91c1c;
-        }
-        .toggle-link {
-            color: #fca5a5;
-            cursor: pointer;
-        }
-        .toggle-link:hover {
-            text-decoration: underline;
+        .btn:hover {
+            transform: scale(1.05);
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
+<body class="min-h-screen flex items-center justify-center p-4">
 
-    <div class="main-container w-full max-w-md p-8 rounded-xl shadow-2xl">
-        <!-- Login Form -->
-        <div id="login-form-container">
-            <header class="text-center mb-8">
-                <h1 class="text-4xl font-cinzel font-bold text-red-500" style="text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);">Acesso ao Portal</h1>
-            </header>
-            <form id="login-form" class="space-y-6">
-                <div>
-                    <label for="login-email" class="block text-sm font-medium mb-1">Email do Operativo</label>
-                    <input type="email" id="login-email" required class="form-input w-full p-3 rounded-md">
-                </div>
-                <div>
-                    <label for="login-password" class="block text-sm font-medium mb-1">Senha de Acesso</label>
-                    <input type="password" id="login-password" required class="form-input w-full p-3 rounded-md">
-                </div>
-                <button type="submit" class="submit-button w-full text-white font-bold py-3 px-4 rounded-md">Entrar</button>
-            </form>
-            <p id="login-error" class="text-red-500 mt-4 text-center"></p>
-            <p class="mt-6 text-center text-sm">
-                Não tem uma conta? <span id="show-register-link" class="toggle-link">Registre-se aqui.</span>
-            </p>
+    <div class="login-container w-full max-w-md p-8 rounded-lg">
+        <h1 class="font-cinzel text-4xl text-center text-red-500 mb-6">Portal de Kuar-Tor</h1>
+        
+        <div id="login-view">
+            <h2 class="text-2xl text-center text-gray-300 mb-8">Login</h2>
+            <div class="space-y-4">
+                <input id="email-input" type="email" placeholder="Email" class="form-input w-full p-3 rounded text-white">
+                <input id="password-input" type="password" placeholder="Senha" class="form-input w-full p-3 rounded text-white">
+                <button id="login-button" class="btn w-full bg-red-700 hover:bg-red-600 text-white font-semibold py-3 rounded-md">Entrar</button>
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-gray-400">Não tem uma conta? <a href="#" id="show-signup" class="text-red-400 hover:underline">Registre-se</a></p>
+                 <button id="google-login-button" class="btn mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-md">Login com Google</button>
+            </div>
+        </div>
+        
+        <div id="signup-view" class="hidden">
+            <h2 class="text-2xl text-center text-gray-300 mb-8">Registrar</h2>
+            <div class="space-y-4">
+                <input id="signup-email-input" type="email" placeholder="Email" class="form-input w-full p-3 rounded text-white">
+                <input id="signup-password-input" type="password" placeholder="Senha" class="form-input w-full p-3 rounded text-white">
+                <input id="signup-confirm-password-input" type="password" placeholder="Confirmar Senha" class="form-input w-full p-3 rounded text-white">
+                <button id="signup-button" class="btn w-full bg-red-700 hover:bg-red-600 text-white font-semibold py-3 rounded-md">Registrar</button>
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-gray-400">Já tem uma conta? <a href="#" id="show-login" class="text-red-400 hover:underline">Faça Login</a></p>
+            </div>
         </div>
 
-        <!-- Registration Form (Hidden by default) -->
-        <div id="register-form-container" class="hidden">
-            <header class="text-center mb-8">
-                <h1 class="text-4xl font-cinzel font-bold text-red-500" style="text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);">Registro de Operativo</h1>
-            </header>
-            <form id="register-form" class="space-y-6">
-                <div>
-                    <label for="register-nickname" class="block text-sm font-medium mb-1">Seu Nickname</label>
-                    <input type="text" id="register-nickname" required class="form-input w-full p-3 rounded-md">
-                </div>
-                <div>
-                    <label for="register-email" class="block text-sm font-medium mb-1">Seu Email</label>
-                    <input type="email" id="register-email" required class="form-input w-full p-3 rounded-md">
-                </div>
-                <div>
-                    <label for="register-password" class="block text-sm font-medium mb-1">Crie sua Senha</label>
-                    <input type="password" id="register-password" required class="form-input w-full p-3 rounded-md">
-                </div>
-                <button type="submit" class="submit-button w-full text-white font-bold py-3 px-4 rounded-md">Registrar</button>
-            </form>
-            <p id="register-error" class="text-red-500 mt-4 text-center"></p>
-            <p class="mt-6 text-center text-sm">
-                Já tem uma conta? <span id="show-login-link" class="toggle-link">Faça o login.</span>
-            </p>
-        </div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
-            authDomain: "kuar-tor-portal.firebaseapp.com",
-            projectId: "kuar-tor-portal",
-            storageBucket: "kuar-tor-portal.appspot.com",
-            messagingSenderId: "438781244189",
-            appId: "1:438781244189:web:99ea6a25fc459b14f567f4"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const loginFormContainer = document.getElementById('login-form-container');
-            const registerFormContainer = document.getElementById('register-form-container');
-            const showRegisterLink = document.getElementById('show-register-link');
-            const showLoginLink = document.getElementById('show-login-link');
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            const loginError = document.getElementById('login-error');
-            const registerError = document.getElementById('register-error');
-
-            showRegisterLink.addEventListener('click', () => {
-                loginFormContainer.classList.add('hidden');
-                registerFormContainer.classList.remove('hidden');
-            });
-            showLoginLink.addEventListener('click', () => {
-                registerFormContainer.classList.add('hidden');
-                loginFormContainer.classList.remove('hidden');
-            });
-
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                loginError.textContent = '';
-                auth.signInWithEmailAndPassword(email, password)
-                    .then(() => {
-                        window.location.href = 'main.html';
-                    })
-                    .catch(() => {
-                        loginError.textContent = "Credenciais inválidas.";
-                    });
-            });
-
-            registerForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const nickname = document.getElementById('register-nickname').value.trim();
-                const email = document.getElementById('register-email').value;
-                const password = document.getElementById('register-password').value;
-                registerError.textContent = '';
-
-                if(!nickname) {
-                    registerError.textContent = "Por favor, insira um nickname.";
-                    return;
-                }
-
-                auth.createUserWithEmailAndPassword(email, password)
-                    .then((userCredential) => {
-                        // Set the display name for the new user
-                        return userCredential.user.updateProfile({
-                            displayName: nickname
-                        });
-                    })
-                    .then(() => {
-                        // Redirect after profile is updated
-                        window.location.href = 'main.html';
-                    })
-                    .catch((error) => {
-                        if (error.code == 'auth/weak-password') {
-                            registerError.textContent = 'A senha é muito fraca.';
-                        } else if (error.code == 'auth/email-already-in-use') {
-                            registerError.textContent = 'Este email já está em uso.';
-                        } else {
-                            registerError.textContent = 'Erro ao registrar: ' + error.message;
-                        }
-                    });
-            });
-        });
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
 </body>
 </html>
