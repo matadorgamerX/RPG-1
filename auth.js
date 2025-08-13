@@ -1,20 +1,37 @@
 // Initialize Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
-    authDomain: "kuar-tor-portal.firebaseapp.com",
-    projectId: "kuar-tor-portal",
-    storageBucket: "kuar-tor-portal.firebasestorage.app",
-    messagingSenderId: "438781244189",
-    appId: "1:438781244189:web:99ea6a25fc459b14f567f4",
-    measurementId: "G-X5GTEY10VZ"
-};
+firebase.auth().onAuthStateChanged(function(user) {
+    const itemForm = document.getElementById('item-form');
+    const itemsList = document.getElementById('items-list-container');
+    const loginPrompt = document.getElementById('login-prompt');
+    const logoutButton = document.getElementById('logout-button');
 
-// Initialize only if not already initialized
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+    if (user) {
+        // User is signed in.
+        itemForm.style.display = 'block';
+        itemsList.style.display = 'block';
+        loginPrompt.style.display = 'none';
+        logoutButton.style.display = 'block';
+
+        // Initialize items display
+        initItems();
+    } else {
+        // User is signed out.
+        itemForm.style.display = 'none';
+        itemsList.style.display = 'none';
+        loginPrompt.style.display = 'block';
+        logoutButton.style.display = 'none';
+    }
+});
+
+// Sign-in with Google
+function signInWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).catch(function(error) {
+        console.error("Erro de autenticação:", error);
+    });
 }
 
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-export { auth, db };
+// Sign out
+function signOut() {
+    firebase.auth().signOut();
+}
