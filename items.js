@@ -12,56 +12,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const addItemButton = document.getElementById('add-item-button');
     const itemsList = document.getElementById('items-list');
 
-    // --- VARIÁVEIS DE ESTADO ---
+    // --- VARIÁVEIS DE ESTADO E FIREBASE ---
     let currentUser = null;
     let selectedCharacterId = null;
     let itemsListener = null; // Para cancelar o listener de itens ao mudar de personagem
+    let auth, db, rtdb;
 
-    // --- INICIALIZAÇÃO DO FIREBASE ---
-    // A configuração do Firebase é carregada do firebase-config.js
-    const auth = firebase.auth();
-    const db = firebase.firestore(); // Usando Firestore para buscar personagens
-    const rtdb = firebase.database(); // Usando Realtime Database para itens
-
-    // --- FUNÇÕES DE LÓGICA ---
+    /**
+     * Inicializa os serviços do Firebase.
+     * Esta função é chamada apenas uma vez.
+     */
+    function initializeFirebaseServices() {
+        if (!firebase.apps.length) {
+            console.error("Firebase não foi inicializado. Verifique se firebase-config.js está carregado.");
+            return false;
+        }
+        auth = firebase.auth();
+        db = firebase.firestore(); 
+        rtdb = firebase.database();
+        return true;
+    }
 
     /**
      * Carrega a lista de personagens do usuário do Firestore.
-     * Popula o dropdown de seleção.
      */
     async function loadCharacters() {
-        if (!currentUser) return;
+        if (!currentUser || !db) return;
 
         try {
             const charactersRef = db.collection(`users/${currentUser.uid}/characters`);
             const snapshot = await charactersRef.get();
 
             characterDropdown.innerHTML = '<option value="">-- Selecione um Herói --</option>';
+            noCharactersMessage.classList.add('hidden');
 
             if (snapshot.empty) {
                 noCharactersMessage.classList.remove('hidden');
                 return;
             }
             
-            noCharactersMessage.classList.add('hidden');
             snapshot.forEach(doc => {
                 const character = doc.data();
                 const option = document.createElement('option');
                 option.value = doc.id;
-                // Usamos o nome do personagem salvo no documento do Firestore
                 option.textContent = character.name || 'Personagem sem nome'; 
                 characterDropdown.appendChild(option);
             });
         } catch (error) {
             console.error("Erro ao carregar personagens:", error);
-            noCharactersMessage.textContent = "Erro ao carregar personagens. Tente recarregar a página.";
+            noCharactersMessage.textContent = "Erro ao carregar personagens. Verifique a consola e se os Ad-blockers estão desativados.";
             noCharactersMessage.classList.remove('hidden');
         }
     }
 
     /**
      * Mostra ou esconde o conteúdo principal com base no estado de login.
-     * @param {boolean} loggedIn - O usuário está logado?
      */
     function toggleMainContent(loggedIn) {
         if (loggedIn) {
@@ -78,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     /**
      * Mostra os itens do personagem selecionado.
-     * @param {DataSnapshot} snapshot - O snapshot dos itens do Firebase RTDB.
      */
     function displayItems(snapshot) {
         itemsList.innerHTML = '';
@@ -105,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
     /**
      * Adiciona um novo item ao inventário do personagem selecionado.
      */
@@ -115,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const itemQuantity = parseInt(document.getElementById('itemQuantity').value, 10);
 
         if (!itemName || !selectedCharacterId || isNaN(itemQuantity) || itemQuantity < 1) {
-            alert("Por favor, preencha o nome do item e a quantidade (pelo menos 1).");
+            alert("Por favor, selecione um personagem e preencha o nome e a quantidade do item (pelo menos 1).");
             return;
         }
 
@@ -130,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemsRef = rtdb.ref(`items/${currentUser.uid}/${selectedCharacterId}`);
             await itemsRef.push(newItem);
             
-            // Limpa o formulário
             document.getElementById('itemName').value = '';
             document.getElementById('itemDescription').value = '';
             document.getElementById('itemQuantity').value = '1';
@@ -142,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     /**
      * Deleta um item do inventário do personagem selecionado.
-     * @param {string} itemId - O ID do item a ser deletado.
      */
     async function deleteItem(itemId) {
         if (!currentUser || !selectedCharacterId || !itemId) return;
@@ -158,51 +159,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
     // --- EVENT LISTENERS ---
 
-    // Autenticação
-    auth.onAuthStateChanged(user => {
-        currentUser = user;
-        toggleMainContent(!!user);
-        if (user) {
-            loadCharacters();
-        }
-    });
+    // Inicializa os serviços e define os listeners de autenticação
+    if (initializeFirebaseServices()) {
+        auth.onAuthStateChanged(user => {
+            currentUser = user;
+            toggleMainContent(!!user);
+            if (user) {
+                loadCharacters();
+            }
+        });
 
-    loginButton.addEventListener('click', () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(error => console.error("Erro de login:", error));
-    });
+        loginButton.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(error => console.error("Erro de login:", error));
+        });
 
-    logoutButton.addEventListener('click', () => {
-        auth.signOut();
-    });
+        logoutButton.addEventListener('click', () => auth.signOut());
+    }
 
     // Seleção de Personagem
     characterDropdown.addEventListener('change', (e) => {
         selectedCharacterId = e.target.value;
-
-        // Cancela o listener anterior se houver um
-        if (itemsListener) {
-            itemsListener.off();
-        }
+        if (itemsListener) itemsListener.off();
 
         if (selectedCharacterId) {
             characterContent.classList.remove('hidden');
             characterNameDisplay.textContent = characterDropdown.options[characterDropdown.selectedIndex].text;
             
-            // Cria um novo listener para os itens do personagem selecionado
             const itemsRef = rtdb.ref(`items/${currentUser.uid}/${selectedCharacterId}`);
-            itemsListener = itemsRef.orderByChild('createdAt'); // Ordena por data de criação
+            itemsListener = itemsRef.orderByChild('createdAt');
             itemsListener.on('value', displayItems, (error) => {
                 console.error("Erro ao carregar itens:", error);
                 itemsList.innerHTML = `<p class="text-red-500">Erro ao carregar inventário.</p>`;
             });
-
         } else {
             characterContent.classList.add('hidden');
-            itemsList.innerHTML = ''; // Limpa a lista de itens
+            itemsList.innerHTML = '';
         }
     });
     
@@ -210,8 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addItemButton.addEventListener('click', addItem);
     itemsList.addEventListener('click', (e) => {
         if (e.target && e.target.classList.contains('delete-item-btn')) {
-            const itemId = e.target.dataset.id;
-            deleteItem(itemId);
+            deleteItem(e.target.dataset.id);
         }
     });
 });
