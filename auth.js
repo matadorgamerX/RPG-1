@@ -1,39 +1,67 @@
 // Initialize Firebase
 firebase.auth().onAuthStateChanged(function(user) {
-    const itemForm = document.getElementById('item-form');
-    const itemsList = document.getElementById('items-list-container');
-    const loginPrompt = document.getElementById('login-prompt');
+    // --- Common Elements ---
     const logoutButton = document.getElementById('logout-button');
+    const userEmailSpan = document.getElementById('user-email');
+    const loginLink = document.getElementById('login-link');
+    const userInfoDiv = document.getElementById('user-info');
 
+    // --- Page-Specific Elements for items.html ---
+    const itemForm = document.getElementById('item-form');
+    const itemsListContainer = document.getElementById('items-list-container');
+    const loginPrompt = document.getElementById('login-prompt');
+    
     if (user) {
-        // User is signed in.
-        if (itemForm) itemForm.style.display = 'block';
-        if (itemsList) itemsList.style.display = 'block';
-        if (loginPrompt) loginPrompt.style.display = 'none';
-        if (logoutButton) logoutButton.style.display = 'block';
+        // --- User is signed in. ---
 
-        // Initialize items display only if the function exists
+        // Universal login state for main.html and other pages
+        if (loginLink) loginLink.classList.add('hidden');
+        if (userInfoDiv) {
+            userInfoDiv.classList.remove('hidden');
+            userInfoDiv.classList.add('flex'); // Ensure it's a flex container
+        }
+        if (userEmailSpan) userEmailSpan.textContent = user.email;
+        if (logoutButton) logoutButton.classList.remove('hidden');
+
+        // Specific logic for items.html
+        if (itemForm) itemForm.style.display = 'block';
+        if (itemsListContainer) itemsListContainer.style.display = 'block';
+        if (loginPrompt) loginPrompt.style.display = 'none';
+
+        // Initialize items display only if the function exists (for items.html)
         if (typeof initItems === 'function') {
             initItems();
         }
     } else {
-        // User is signed out.
+        // --- User is signed out. ---
+        
+        // Universal logout state
+        if (loginLink) loginLink.classList.remove('hidden');
+        if (userInfoDiv) userInfoDiv.classList.add('hidden');
+
+        // Specific logic for items.html
         if (itemForm) itemForm.style.display = 'none';
-        if (itemsList) itemsList.style.display = 'none';
+        if (itemsListContainer) itemsListContainer.style.display = 'none';
         if (loginPrompt) loginPrompt.style.display = 'block';
-        if (logoutButton) logoutButton.style.display = 'none';
     }
 });
 
-// Sign-in with Google
+/**
+ * Signs the user in with Google.
+ */
 function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(provider).catch(function(error) {
-        console.error("Erro de autenticação:", error);
+        console.error("Authentication Error:", error);
     });
 }
 
-// Sign out
+/**
+ * Signs the user out.
+ */
 function signOut() {
-    firebase.auth().signOut();
+    firebase.auth().signOut().then(() => {
+        // This ensures the page reloads after logout, redirecting if necessary.
+        window.location.reload(); 
+    });
 }
