@@ -100,6 +100,26 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        // One-time script to unregister any old service workers.
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                if (registrations.length > 0) {
+                    console.log('Unregistering service workers...');
+                    for (let registration of registrations) {
+                        registration.unregister();
+                        console.log('Service worker unregistered:', registration);
+                    }
+                    // Suggest reloading the page to apply the changes.
+                    alert('Um script de fundo desatualizado foi removido. A página será recarregada para aplicar a correção.');
+                    window.location.reload();
+                }
+            }).catch(function(err) {
+                console.error('Service Worker unregistration failed: ', err);
+            });
+        }
+    </script>
 
     <script src="firebase-config.js"></script>
     <script src="items.js"></script>
