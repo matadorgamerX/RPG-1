@@ -6,22 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terminal da Aliança - Expedição Kuar-Tor</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- Firebase Core SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    
-    <!-- Styles -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -39,15 +30,18 @@
         .roster-entry { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 0.25rem 0; }
         .roster-character { font-weight: 600; color: #e5e7eb; }
         .roster-user { font-style: italic; color: #9ca3af; font-size: 0.8rem; }
+        .form-select {
+            background-color: #1f2937;
+            border: 1px solid #4b5563;
+        }
     </style>
 </head>
 <body class="min-h-screen p-4">
 
-    <!-- This content will only be shown if the user is logged in -->
     <div id="main-content" class="hidden">
         <header class="text-center mb-8 flex justify-between items-center">
             <div>
-                <a href="../index.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
+                <a href="../main.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
                     &larr; Voltar ao Portal
                 </a>
             </div>
@@ -59,20 +53,22 @@
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Left Column: Signup -->
             <div class="space-y-6">
                 <section class="terminal-card rounded-lg p-6">
                     <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">INSCREVER-SE NA MISSÃO</h2>
                     <div class="space-y-4">
                         <div>
                             <label for="mission-select" class="block text-sm font-medium mb-1">Selecione a Missão:</label>
-                            <select id="mission-select" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></select>
+                            <select id="mission-select" class="w-full p-2 form-select rounded-md text-white"></select>
                         </div>
                         <div>
-                            <label for="character-name-input" class="block text-sm font-medium mb-1">Nome do Personagem:</label>
-                            <input type="text" id="character-name-input" placeholder="Digite o nome do seu personagem" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md">
+                            <label for="character-select" class="block text-sm font-medium mb-1">Selecione o Personagem:</label>
+                            <select id="character-select" class="w-full p-2 form-select rounded-md text-white"></select>
+                            <p id="no-characters-message" class="text-xs text-amber-400 mt-2 hidden">
+                                Nenhum personagem encontrado. Crie um no <a href="../Forms/formV5.html" class="underline hover:text-amber-300">Gerador de Fichas</a>.
+                            </p>
                         </div>
-                        <button id="confirm-signup-button" class="mt-4 w-full bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors duration-300">CONFIRMAR INSCRIÇÃO</button>
+                        <button id="confirm-signup-button" class="mt-4 w-full bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>CONFIRMAR INSCRIÇÃO</button>
                     </div>
                 </section>
                 <section class="terminal-card rounded-lg p-6">
@@ -85,7 +81,6 @@
                     </div>
                 </section>
             </div>
-            <!-- Right Column: Roster -->
             <div class="space-y-6">
                  <section class="terminal-card rounded-lg p-6">
                     <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">INSCRITOS NA EXPEDIÇÃO</h2>
@@ -99,15 +94,23 @@
 
     <script src="../firebase-config.js"></script>
     <script>
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
         document.addEventListener('DOMContentLoaded', () => {
+            // Check if Firebase is initialized
+            if (typeof firebase === 'undefined' || !firebase.apps.length) {
+                console.error("Firebase not initialized!");
+                document.body.innerHTML = "<h1>Erro Crítico: Falha na conexão com os servidores. Verifique o console.</h1>";
+                return;
+            }
+
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+
             const mainContent = document.getElementById('main-content');
             const userDisplay = document.getElementById('user-display');
             const logoutButton = document.getElementById('logout-button');
             const missionSelect = document.getElementById('mission-select');
-            const characterNameInput = document.getElementById('character-name-input');
+            const characterSelect = document.getElementById('character-select');
+            const noCharactersMessage = document.getElementById('no-characters-message');
             const confirmSignupButton = document.getElementById('confirm-signup-button');
             const missionRosterDiv = document.getElementById('mission-roster');
             
@@ -120,9 +123,11 @@
                     mainContent.classList.remove('hidden');
                     userDisplay.textContent = `Operativo Conectado: ${user.displayName || user.email}`;
                     loadMissions();
+                    loadCharacters(); // New function call
                     listenForSignups();
                 } else {
-                    window.location.href = '../login.html';
+                    // Redirect to the main login page, not the old one.
+                    window.location.href = '../login.html'; 
                 }
             });
 
@@ -139,28 +144,74 @@
                     console.error("Error loading missions:", err);
                 }
             }
+            
+            // --- NEW FUNCTION to load characters ---
+            async function loadCharacters() {
+                if (!currentUser) return;
+                
+                try {
+                    const charactersRef = db.collection(`users/${currentUser.uid}/characters`);
+                    const snapshot = await charactersRef.get();
+                    
+                    characterSelect.innerHTML = '<option value="">-- Carregando... --</option>';
+                    
+                    if (snapshot.empty) {
+                        noCharactersMessage.classList.remove('hidden');
+                        characterSelect.innerHTML = '<option value="">-- Nenhum Personagem --</option>';
+                        confirmSignupButton.disabled = true;
+                        return;
+                    }
+                    
+                    let characterOptions = '<option value="">-- Selecione seu Personagem --</option>';
+                    snapshot.forEach(doc => {
+                        const character = doc.data();
+                        characterOptions += `<option value="${doc.id}">${character.name || 'Personagem sem nome'}</option>`;
+                    });
+                    characterSelect.innerHTML = characterOptions;
+                    confirmSignupButton.disabled = false; // Enable button once characters are loaded
+                    
+                } catch (error) {
+                    console.error("Error loading characters:", error);
+                    characterSelect.innerHTML = '<option value="">-- Erro ao Carregar --</option>';
+                    confirmSignupButton.disabled = true;
+                }
+            }
 
             confirmSignupButton.addEventListener('click', async () => {
                 const selectedMissionId = missionSelect.value;
-                const characterName = characterNameInput.value.trim();
-                const selectedMission = missions.find(m => m.id === selectedMissionId);
-
-                if (!selectedMissionId || !characterName) {
-                    alert("Por favor, selecione uma missão e digite o nome do seu personagem.");
+                const selectedCharacterId = characterSelect.value;
+                
+                if (!selectedMissionId || !selectedCharacterId) {
+                    alert("Por favor, selecione uma missão e um personagem.");
                     return;
                 }
+                
+                const selectedMission = missions.find(m => m.id === selectedMissionId);
+                // Get character name from the dropdown text content
+                const selectedCharacterName = characterSelect.options[characterSelect.selectedIndex].text;
 
                 try {
+                    // Check if this character is already signed up for this mission
+                    const existingSignupQuery = await db.collection('mission_signups')
+                        .where('missionId', '==', selectedMissionId)
+                        .where('characterId', '==', selectedCharacterId)
+                        .get();
+
+                    if (!existingSignupQuery.empty) {
+                        alert(`O personagem "${selectedCharacterName}" já está inscrito nesta missão.`);
+                        return;
+                    }
+
                     await db.collection('mission_signups').add({
                         missionId: selectedMissionId,
                         missionName: selectedMission.name,
-                        characterName: characterName,
+                        characterId: selectedCharacterId, // Store character ID
+                        characterName: selectedCharacterName, // Store character name
                         userId: currentUser.uid,
-                        userNickname: currentUser.displayName || 'Anônimo', // Use nickname
+                        userNickname: currentUser.displayName || currentUser.email,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    alert(`Personagem "${characterName}" inscrito na missão "${selectedMission.name}" com sucesso!`);
-                    characterNameInput.value = '';
+                    alert(`Personagem "${selectedCharacterName}" inscrito na missão "${selectedMission.name}" com sucesso!`);
                 } catch (error) {
                     console.error("Error signing up for mission: ", error);
                     alert("Falha ao se inscrever. Verifique suas permissões ou tente novamente.");
