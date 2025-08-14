@@ -7,19 +7,21 @@ firebase.auth().onAuthStateChanged(function(user) {
 
     if (user) {
         // User is signed in.
-        itemForm.style.display = 'block';
-        itemsList.style.display = 'block';
-        loginPrompt.style.display = 'none';
-        logoutButton.style.display = 'block';
+        if (itemForm) itemForm.style.display = 'block';
+        if (itemsList) itemsList.style.display = 'block';
+        if (loginPrompt) loginPrompt.style.display = 'none';
+        if (logoutButton) logoutButton.style.display = 'block';
 
-        // Initialize items display
-        initItems();
+        // Initialize items display only if the function exists
+        if (typeof initItems === 'function') {
+            initItems();
+        }
     } else {
         // User is signed out.
-        itemForm.style.display = 'none';
-        itemsList.style.display = 'none';
-        loginPrompt.style.display = 'block';
-        logoutButton.style.display = 'none';
+        if (itemForm) itemForm.style.display = 'none';
+        if (itemsList) itemsList.style.display = 'none';
+        if (loginPrompt) loginPrompt.style.display = 'block';
+        if (logoutButton) logoutButton.style.display = 'none';
     }
 });
 
