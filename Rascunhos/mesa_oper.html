@@ -1,19 +1,4 @@
-
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mesa de Operações - Kuar-Tor</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
-    <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -25,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Estilização base com fontes temáticas */
         body {
@@ -107,9 +93,33 @@
             background: linear-gradient(45deg, #6b7280, #4b5563);
             box-shadow: 0 0 15px rgba(107, 114, 128, 0.8);
         }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c0c0c;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+            color: #a1a1aa;
+        }
+        .font-roboto-mono { font-family: 'Roboto Mono', monospace; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .terminal-card { background-color: rgba(10, 10, 10, 0.7); backdrop-filter: blur(5px); border: 1px solid #374151; }
+        .mission-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+        .mission-card { background-color: #1f2937; border-radius: 0.5rem; border: 1px solid #4b5563; padding: 1.5rem; }
+        .mission-card h3 { color: #fca5a5; }
+        .character-entry {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.5rem; border-bottom: 1px solid #374151;
+            cursor: pointer; transition: background-color 0.2s;
+        }
+        .character-entry:hover { background-color: rgba(239, 68, 68, 0.1); }
+        .character-entry:last-child { border-bottom: none; }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
+        .modal-content { background-color: #18181b; margin: 5% auto; padding: 2rem; border: 1px solid #3f3f46; width: 90%; max-width: 800px; border-radius: 0.5rem; }
+        .modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
-<body class="bg-slate-900 text-gray-300">
+<body class="bg-slate-900 text-gray-300 min-h-screen p-4 md:p-8">
 
     <div class="container mx-auto p-4 sm:p-6 md:p-8">
         <header class="text-center mb-8">
@@ -210,44 +220,60 @@
         </div>
     </div>
 
+    <div id="main-content" class="hidden">
+        <header class="text-center mb-8 flex justify-between items-center">
+            <a href="../index.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
+                &larr; Voltar ao Portal
+            </a>
+            <div>
+                <h1 class="text-3xl md:text-5xl font-cinzel font-bold text-red-500 tracking-wider">Mesa de Operações</h1>
+                <p id="user-display" class="text-lg text-gray-500">Operativo Mestre Conectado</p>
+            </div>
+            <button id="logout-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">TERMINAR SESSÃO</button>
+        </header>
+
+        <main id="mission-board" class="mission-board">
+            <p class="text-center text-gray-500 col-span-full">Carregando dados da missão...</p>
+        </main>
+    </div>
+
+    <!-- Character Sheet Modal -->
+    <div id="character-modal" class="modal">
+        <div class="modal-content">
+            <span id="modal-close-button" class="modal-close">&times;</span>
+            <div id="modal-body">
+                <p>Carregando ficha...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Core SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
+            authDomain: "kuar-tor-portal.firebaseapp.com",
+            projectId: "kuar-tor-portal",
+            storageBucket: "kuar-tor-portal.appspot.com",
+            messagingSenderId: "438781244189",
+            appId: "1:438781244189:web:99ea6a25fc459b14f567f4"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
         window.addEventListener('load', () => {
             // --- Constantes e Variáveis Globais ---
             const ADMIN_PASSWORD = 'fungus';
             let isAdminMode = false;
             // PONTOS DE INTERESSE DA CAMPANHA KUAR-TOR
-            let pointsOfInterest = [
-                {
-                    x: 0.51, y: 0.85,
-                    title: "Portirus, O Porto da Chegada",
-                    description: "A principal cidade portuária e o ponto de entrada para Kuar-Tor. É uma zona neutra caótica, repleta de mercenários, comerciantes e agentes de todas as facções da ilha. Um lugar onde tudo pode ser comprado, vendido ou roubado."
-                },
-                {
-                    x: 0.78, y: 0.65,
-                    title: "Necropolis, O Reino Pós-Vida",
-                    description: "Governado pelo temível Imperador Koema, Necropolis é um reino onde os mortos se erguem para servir. Suas terras pantanosas e arquitetura gótica são o lar de necromantes e criaturas mortas-vivas, um lugar sombrio de poder profano."
-                },
-                {
-                    x: 0.25, y: 0.50,
-                    title: "Valheim, A Cidade Mecânica",
-                    description: "Uma maravilha da engenharia construída em torno de um colossal Reator Perpétuo. Valheim é um reino de tecnologia e metal, onde autômatos e ciborgues andam pelas ruas e a inovação muitas vezes ignora os limites da ética."
-                },
-                {
-                    x: 0.60, y: 0.20,
-                    title: "Gladivostok, O Domínio Gelado",
-                    description: "Nas montanhas congeladas do norte fica Gladivostok. Seus habitantes são guerreiros robustos e mestres de uma forma única de magia do gelo, adaptados para sobreviver em um dos ambientes mais hostis de Kuar-Tor."
-                },
-                {
-                    x: 0.55, y: 0.52,
-                    title: "Cidadela do Imperador Ezuadir",
-                    description: "O coração do poder em Kuar-Tor. Desta fortaleza imponente, o Imperador Ezuadir comanda suas legiões com o objetivo de unificar e controlar toda a ilha sob seu punho de ferro, acreditando ser o único capaz de domar a entidade viva que é Kuar-Tor."
-                },
-                {
-                    x: 0.33, y: 0.73,
-                    title: "Laboratórios Secretos de Laplace",
-                    description: "Escondido em uma região isolada, este complexo de laboratórios é o domínio de Laplace, um inventor genial e amoral. Aqui, ele realiza experimentos perigosos, fundindo a biologia única da ilha com tecnologia arcana, criando maravilhas e monstruosidades."
-                }
-            ];
+            let pointsOfInterest = [];
             let currentPinCoords = { x: 0, y: 0 };
             let isImageLoaded = false;
 
@@ -294,7 +320,7 @@
                 isImageLoaded = true;
                 resizeCanvas();
                 redrawBackgroundImage();
-                renderPins(); // Renderiza os pins assim que a imagem carrega
+                loadPins(); // Carrega os pins do Firestore
             };
             
             function resizeCanvas() {
@@ -340,12 +366,12 @@
                     </svg>
                 `;
 
-                pointsOfInterest.forEach((point, index) => {
+                pointsOfInterest.forEach((point) => {
                     const pinWrapper = document.createElement('div');
                     pinWrapper.className = 'pin';
                     pinWrapper.style.left = `${point.x * 100}%`;
                     pinWrapper.style.top = `${point.y * 100}%`;
-                    pinWrapper.dataset.index = index;
+                    pinWrapper.dataset.id = point.id;
                     pinWrapper.innerHTML = pinSVG;
                     
                     pinWrapper.addEventListener('click', (e) => {
@@ -357,7 +383,7 @@
                         
                         if (isAdminMode) {
                             removePinButton.classList.remove('hidden');
-                            removePinButton.dataset.index = index;
+                            removePinButton.dataset.id = point.id;
                         } else {
                             removePinButton.classList.add('hidden');
                         }
@@ -420,13 +446,21 @@
             });
 
             document.getElementById('cancelPinButton').addEventListener('click', () => pinModal.classList.add('hidden'));
-            document.getElementById('savePinButton').addEventListener('click', () => {
+            
+            document.getElementById('savePinButton').addEventListener('click', async () => {
                 const title = document.getElementById('pinTitle').value;
                 const description = document.getElementById('pinDescription').value;
                 if (title && description) {
-                    pointsOfInterest.push({ ...currentPinCoords, title, description });
-                    renderPins();
-                    pinModal.classList.add('hidden');
+                    const newPin = { ...currentPinCoords, title, description };
+                    try {
+                        const docRef = await db.collection("map_pins").add(newPin);
+                        newPin.id = docRef.id;
+                        pointsOfInterest.push(newPin);
+                        renderPins();
+                        pinModal.classList.add('hidden');
+                    } catch (error) {
+                        console.error("Error adding document: ", error);
+                    }
                 } else {
                     const pinModalElement = document.getElementById('pinModal').querySelector('div');
                     pinModalElement.classList.add('animate-shake');
@@ -436,14 +470,29 @@
 
             document.getElementById('closeViewPinButton').addEventListener('click', () => viewPinModal.classList.add('hidden'));
             
-            removePinButton.addEventListener('click', () => {
-                const indexToRemove = parseInt(removePinButton.dataset.index, 10);
-                if (!isNaN(indexToRemove)) {
-                    pointsOfInterest.splice(indexToRemove, 1);
-                    renderPins();
-                    viewPinModal.classList.add('hidden');
+            removePinButton.addEventListener('click', async () => {
+                const pinIdToRemove = removePinButton.dataset.id;
+                if (pinIdToRemove) {
+                    try {
+                        await db.collection("map_pins").doc(pinIdToRemove).delete();
+                        pointsOfInterest = pointsOfInterest.filter(p => p.id !== pinIdToRemove);
+                        renderPins();
+                        viewPinModal.classList.add('hidden');
+                    } catch (error) {
+                        console.error("Error removing document: ", error);
+                    }
                 }
             });
+
+            async function loadPins() {
+                try {
+                    const querySnapshot = await db.collection("map_pins").get();
+                    pointsOfInterest = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderPins();
+                } catch (error) {
+                    console.log("Error getting documents: ", error);
+                }
+            }
             
             window.addEventListener('resize', () => {
                 resizeCanvas();
@@ -451,88 +500,6 @@
                 renderPins();
             });
         });
-    </script>
-</body>
-</html>
-
-    <!-- Firebase Core SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
-    <!-- Styles -->
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0c0c0c;
-            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
-            color: #a1a1aa;
-        }
-        .font-roboto-mono { font-family: 'Roboto Mono', monospace; }
-        .font-cinzel { font-family: 'Cinzel', serif; }
-        .terminal-card { background-color: rgba(10, 10, 10, 0.7); backdrop-filter: blur(5px); border: 1px solid #374151; }
-        .mission-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-        .mission-card { background-color: #1f2937; border-radius: 0.5rem; border: 1px solid #4b5563; padding: 1.5rem; }
-        .mission-card h3 { color: #fca5a5; }
-        .character-entry {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.5rem; border-bottom: 1px solid #374151;
-            cursor: pointer; transition: background-color 0.2s;
-        }
-        .character-entry:hover { background-color: rgba(239, 68, 68, 0.1); }
-        .character-entry:last-child { border-bottom: none; }
-        
-        /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
-        .modal-content { background-color: #18181b; margin: 5% auto; padding: 2rem; border: 1px solid #3f3f46; width: 90%; max-width: 800px; border-radius: 0.5rem; }
-        .modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-    </style>
-</head>
-<body class="min-h-screen p-4 md:p-8">
-
-    <div id="main-content" class="hidden">
-        <header class="text-center mb-8 flex justify-between items-center">
-            <a href="../index.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
-                &larr; Voltar ao Portal
-            </a>
-            <div>
-                <h1 class="text-3xl md:text-5xl font-cinzel font-bold text-red-500 tracking-wider">Mesa de Operações</h1>
-                <p id="user-display" class="text-lg text-gray-500">Operativo Mestre Conectado</p>
-            </div>
-            <button id="logout-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">TERMINAR SESSÃO</button>
-        </header>
-
-        <main id="mission-board" class="mission-board">
-            <p class="text-center text-gray-500 col-span-full">Carregando dados da missão...</p>
-        </main>
-    </div>
-
-    <!-- Character Sheet Modal -->
-    <div id="character-modal" class="modal">
-        <div class="modal-content">
-            <span id="modal-close-button" class="modal-close">&times;</span>
-            <div id="modal-body">
-                <p>Carregando ficha...</p>
-            </div>
-        </div>
-    </div>
-
-
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
-            authDomain: "kuar-tor-portal.firebaseapp.com",
-            projectId: "kuar-tor-portal",
-            storageBucket: "kuar-tor-portal.appspot.com",
-            messagingSenderId: "438781244189",
-            appId: "1:438781244189:web:99ea6a25fc459b14f567f4"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
 
         document.addEventListener('DOMContentLoaded', () => {
             const mainContent = document.getElementById('main-content');
