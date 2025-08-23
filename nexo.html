@@ -290,8 +290,6 @@
         });
 
         /** Adiciona uma mensagem ao registro de atividades */
-
-        /** Adiciona uma mensagem ao registro de atividades */
         function adicionarLog(mensagem, tipo = 'info') {
             const cores = {
                 info: 'text-gray-400',
@@ -317,7 +315,7 @@
                 if (isAdminMode) {
                     const btnClass = comodo.disponivel ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500';
                     const btnText = comodo.disponivel ? 'Bloquear' : 'Liberar';
-                    adminControls = `<button class="mt-4 text-sm ${btnClass} text-white py-1 px-3 rounded" onclick="toggleDisponibilidade('${comodo.id}')">${btnText}</button>`;
+                    adminControls = `<button data-comodo-id="${comodo.id}" class="admin-btn mt-4 text-sm ${btnClass} text-white py-1 px-3 rounded">${btnText}</button>`;
                 }
 
                 if (comodo.disponivel) {
@@ -329,7 +327,7 @@
                         ${adminControls}
                     `;
                     card.addEventListener('click', (e) => {
-                        if (e.target.tagName !== 'BUTTON') {
+                        if (!e.target.classList.contains('admin-btn')) {
                             abrirModalAcoes(comodo)
                         }
                     });
@@ -344,9 +342,6 @@
                             ${adminControls}
                         </div>
                     `;
-                    if (isAdminMode) {
-                        card.querySelector('button').addEventListener('click', () => toggleDisponibilidade(comodo.id));
-                    }
                 }
                 comodosGrid.appendChild(card);
             });
@@ -435,6 +430,13 @@
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     fecharModal();
+                }
+            });
+
+            comodosGrid.addEventListener('click', (e) => {
+                if (e.target.classList.contains('admin-btn')) {
+                    const comodoId = e.target.dataset.comodoId;
+                    toggleDisponibilidade(comodoId);
                 }
             });
         }
