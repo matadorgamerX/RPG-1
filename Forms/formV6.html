@@ -851,6 +851,7 @@
 
             async function loadSheetFromFirestore(sheetId) {
                 if (!currentUserId || !sheetId) return;
+                console.log("Tentando carregar ficha com ID:", sheetId);
                 const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
 
                 try {
@@ -1050,6 +1051,21 @@
                 };
                 reader.readAsText(file);
                 e.target.value = '';
+            });
+
+            // Lógica para os botões de carregar e excluir (delegação de eventos)
+            savedSheetsListDiv.addEventListener('click', async (e) => {
+                const target = e.target;
+                const sheetItem = target.closest('.flex.justify-between.items-center');
+                if (!sheetItem) return;
+
+                const id = target.dataset.id;
+                
+                if (target.classList.contains('load-sheet-btn')) {
+                    await loadSheetFromFirestore(id);
+                } else if (target.classList.contains('delete-sheet-btn')) {
+                    deleteSheetFromFirestore(id);
+                }
             });
 
             // Adiciona o modal de confirmação e alerta
