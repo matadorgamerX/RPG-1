@@ -100,9 +100,13 @@
     <div class="container mx-auto max-w-7xl">
 
         <!-- Cabeçalho -->
-        <header class="text-center mb-8">
-            <h1 class="text-4xl sm:text-5xl font-bold font-cinzel text-violet-300 tracking-wider">Nexo do Paradoxo</h1>
-            <p class="text-lg text-gray-400 mt-2">Um refúgio forjado entre a Ordem e o Caos.</p>
+        <header class="text-center mb-8 flex justify-between items-center">
+            <a href="main.html" class="btn-primary text-white font-bold py-2 px-4 rounded-lg">&larr; Voltar ao Portal</a>
+            <div>
+                <h1 class="text-4xl sm:text-5xl font-bold font-cinzel text-violet-300 tracking-wider">Nexo do Paradoxo</h1>
+                <p class="text-lg text-gray-400 mt-2">Um refúgio forjado entre a Ordem e o Caos.</p>
+            </div>
+            <button id="admin-login-button" class="btn-primary text-white font-bold py-2 px-4 rounded-lg">Admin</button>
         </header>
 
         <!-- Grid de Cômodos -->
@@ -118,6 +122,24 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Modal de Senha -->
+    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+        <div class="modal border border-violet-500 rounded-lg shadow-2xl w-full max-w-sm">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold mb-4 text-violet-300">Acesso de Administrador</h3>
+                <div>
+                    <label for="passwordInput" class="block text-sm font-medium text-gray-300 mb-1">Palavra-Passe</label>
+                    <input type="password" id="passwordInput" class="w-full bg-gray-700 border border-violet-500 text-white rounded-lg p-2.5 focus:ring-violet-500 focus:border-violet-500">
+                    <p id="passwordError" class="text-red-400 text-sm mt-2 hidden">Palavra-passe incorreta.</p>
+                </div>
+                <div class="mt-6 flex justify-end gap-4">
+                    <button id="cancelPasswordButton" class="btn-secondary text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                    <button id="submitPasswordButton" class="btn-primary text-white font-bold py-2 px-4 rounded-lg">Entrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal de Ações -->
@@ -221,8 +243,51 @@
         const modalTitle = document.getElementById('modal-title');
         const modalBody = document.getElementById('modal-body');
         const modalCloseBtn = document.getElementById('modal-close-btn');
+        const adminLoginButton = document.getElementById('admin-login-button');
+        const passwordModal = document.getElementById('passwordModal');
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordError = document.getElementById('passwordError');
+        const cancelPasswordButton = document.getElementById('cancelPasswordButton');
+        const submitPasswordButton = document.getElementById('submitPasswordButton');
+
+        // --- ESTADO DO JOGO ---
+        let isAdminMode = false;
+        const ADMIN_PASSWORD = 'fungus'; // Senha para o modo admin
 
         // --- FUNÇÕES ---
+
+        /** Ativa ou desativa o modo de administrador */
+        function setAdminMode(isAdmin) {
+            isAdminMode = isAdmin;
+            renderizarComodos(); // Re-renderiza os cômodos com ou sem os controles de admin
+        }
+
+        adminLoginButton.addEventListener('click', () => {
+            if (isAdminMode) {
+                setAdminMode(false);
+                adicionarLog("Modo de administrador desativado.", "info");
+            } else {
+                passwordModal.classList.remove('hidden');
+            }
+        });
+
+        cancelPasswordButton.addEventListener('click', () => {
+            passwordModal.classList.add('hidden');
+        });
+
+        submitPasswordButton.addEventListener('click', () => {
+            if (passwordInput.value === ADMIN_PASSWORD) {
+                setAdminMode(true);
+                passwordModal.classList.add('hidden');
+                passwordInput.value = '';
+                adicionarLog("Modo de administrador ativado.", "sucesso");
+            } else {
+                passwordError.classList.remove('hidden');
+                setTimeout(() => passwordError.classList.add('hidden'), 3000);
+            }
+        });
+
+        /** Adiciona uma mensagem ao registro de atividades */
 
         /** Adiciona uma mensagem ao registro de atividades */
         function adicionarLog(mensagem, tipo = 'info') {
@@ -246,14 +311,26 @@
                 const card = document.createElement('div');
                 card.className = 'card rounded-lg p-6 flex flex-col h-full';
                 
+                let adminControls = '';
+                if (isAdminMode) {
+                    const btnClass = comodo.disponivel ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500';
+                    const btnText = comodo.disponivel ? 'Bloquear' : 'Liberar';
+                    adminControls = `<button class="mt-4 text-sm ${btnClass} text-white py-1 px-3 rounded" onclick="toggleDisponibilidade('${comodo.id}')">${btnText}</button>`;
+                }
+
                 if (comodo.disponivel) {
                     card.classList.add('cursor-pointer');
                     card.innerHTML = `
                         <h3 class="text-2xl font-cinzel text-violet-300 mb-2">${comodo.nome}</h3>
                         <p class="text-gray-400 flex-grow">${comodo.descricao}</p>
                         <div class="text-right mt-4 text-violet-400 font-semibold">Ver Ações</div>
+                        ${adminControls}
                     `;
-                    card.addEventListener('click', () => abrirModalAcoes(comodo));
+                    card.addEventListener('click', (e) => {
+                        if (e.target.tagName !== 'BUTTON') {
+                            abrirModalAcoes(comodo)
+                        }
+                    });
                 } else {
                     card.classList.add('card-locked');
                     card.innerHTML = `
@@ -262,8 +339,12 @@
                             <h3 class="text-2xl font-cinzel text-gray-500 mb-2">${comodo.nome}</h3>
                             <p class="text-gray-400 mb-2">Bloqueado</p>
                             <p class="text-gray-400 text-sm">Custo: ${comodo.custo}</p>
+                            ${adminControls}
                         </div>
                     `;
+                    if (isAdminMode) {
+                        card.querySelector('button').addEventListener('click', () => toggleDisponibilidade(comodo.id));
+                    }
                 }
                 comodosGrid.appendChild(card);
             });
@@ -302,9 +383,41 @@
             fecharModal();
         }
 
+        /** Alterna a disponibilidade de um cômodo */
+        function toggleDisponibilidade(comodoId) {
+            const comodo = gameState.comodos.find(c => c.id === comodoId);
+            if (comodo) {
+                comodo.disponivel = !comodo.disponivel;
+                saveComodoState(comodoId, comodo.disponivel);
+                renderizarComodos();
+                const status = comodo.disponivel ? "liberado" : "bloqueado";
+                adicionarLog(`O cômodo "${comodo.nome}" foi ${status}.`, "sucesso");
+            }
+        }
+
+        /** Salva o estado de um cômodo no Firebase */
+        function saveComodoState(comodoId, disponivel) {
+            database.ref('nexo/comodos/' + comodoId).set(disponivel);
+        }
+
+        /** Carrega o estado dos cômodos do Firebase */
+        function loadComodosState() {
+            database.ref('nexo/comodos').once('value', (snapshot) => {
+                const comodosState = snapshot.val();
+                if (comodosState) {
+                    gameState.comodos.forEach(comodo => {
+                        if (comodosState[comodo.id] !== undefined) {
+                            comodo.disponivel = comodosState[comodo.id];
+                        }
+                    });
+                }
+                renderizarComodos();
+            });
+        }
+
         // --- INICIALIZAÇÃO ---
         function init() {
-            renderizarComodos();
+            loadComodosState();
             
             // Event Listeners do Modal
             modalCloseBtn.addEventListener('click', fecharModal);

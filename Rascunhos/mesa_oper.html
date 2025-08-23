@@ -320,7 +320,6 @@
                 isImageLoaded = true;
                 resizeCanvas();
                 redrawBackgroundImage();
-                loadPins(); // Carrega os pins do Firestore
             };
             
             function resizeCanvas() {
@@ -411,6 +410,10 @@
             const passwordError = document.getElementById('passwordError');
             
             function setAdminMode(isAdmin) {
+                if (isAdmin && !auth.currentUser) {
+                    alert("Você precisa estar logado para entrar no modo de administrador.");
+                    return;
+                }
                 isAdminMode = isAdmin;
                 if (isAdmin) {
                     adminLoginButton.textContent = "Sair do Modo Admin";
@@ -448,6 +451,10 @@
             document.getElementById('cancelPinButton').addEventListener('click', () => pinModal.classList.add('hidden'));
             
             document.getElementById('savePinButton').addEventListener('click', async () => {
+                if (!auth.currentUser) {
+                    alert("Você precisa estar logado para salvar um ponto.");
+                    return;
+                }
                 const title = document.getElementById('pinTitle').value;
                 const description = document.getElementById('pinDescription').value;
                 if (title && description) {
@@ -460,6 +467,7 @@
                         pinModal.classList.add('hidden');
                     } catch (error) {
                         console.error("Error adding document: ", error);
+                        alert("Erro ao salvar o ponto. Verifique as permissões do banco de dados.");
                     }
                 } else {
                     const pinModalElement = document.getElementById('pinModal').querySelector('div');
@@ -471,6 +479,10 @@
             document.getElementById('closeViewPinButton').addEventListener('click', () => viewPinModal.classList.add('hidden'));
             
             removePinButton.addEventListener('click', async () => {
+                if (!auth.currentUser) {
+                    alert("Você precisa estar logado para remover um ponto.");
+                    return;
+                }
                 const pinIdToRemove = removePinButton.dataset.id;
                 if (pinIdToRemove) {
                     try {
@@ -480,11 +492,15 @@
                         viewPinModal.classList.add('hidden');
                     } catch (error) {
                         console.error("Error removing document: ", error);
+                        alert("Erro ao remover o ponto. Verifique as permissões do banco de dados.");
                     }
                 }
             });
 
             async function loadPins() {
+                if (!auth.currentUser) {
+                    return;
+                }
                 try {
                     const querySnapshot = await db.collection("map_pins").get();
                     pointsOfInterest = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -501,6 +517,17 @@
             });
         });
 
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                mainContent.style.display = 'block';
+                userDisplay.textContent = `Operativo Mestre Conectado: ${user.displayName || user.email}`;
+                loadOperationsData();
+                loadPins();
+            } else {
+                window.location.href = '../login.html';
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             const mainContent = document.getElementById('main-content');
             const userDisplay = document.getElementById('user-display');
@@ -509,16 +536,6 @@
             const modal = document.getElementById('character-modal');
             const modalBody = document.getElementById('modal-body');
             const modalCloseButton = document.getElementById('modal-close-button');
-
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    mainContent.style.display = 'block';
-                    userDisplay.textContent = `Operativo Mestre Conectado: ${user.displayName || user.email}`;
-                    loadOperationsData();
-                } else {
-                    window.location.href = '../login.html';
-                }
-            });
 
             logoutButton.addEventListener('click', () => auth.signOut());
             modalCloseButton.addEventListener('click', () => modal.style.display = "none");
