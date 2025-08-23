@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arquivos de Kuar-Tor</title>
+    <title>Sombra OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -111,16 +111,27 @@
             from, to { background-color: transparent; }
             50% { background-color: #00ff41; }
         }
+        
+        .alert-text {
+            color: #ff0000;
+            text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000;
+            animation: blink-red-text 1.5s step-end infinite;
+        }
+
+        @keyframes blink-red-text {
+            from, to { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
     </style>
 </head>
 <body>
-
     <div class="vhs-wrapper">
         <div id="terminal" class="terminal content-glitch" onclick="initiateConnection()">
             <div id="terminal-output" class="text-sm md:text-base"></div>
             <div id="input-line" class="flex" style="display: none;">
-                <span id="prompt-symbol" class="text-green-400">></span>
-                <input type="text" id="password-input" class="prompt-input flex-1 ml-2">
+                <span id="prompt-symbol" class="text-green-400">sombra@kuar-tor:~$</span>
+                <input type="text" id="command-input" class="prompt-input flex-1 ml-2">
                 <span class="cursor"></span>
             </div>
         </div>
@@ -128,55 +139,239 @@
 
     <script>
         const terminalOutput = document.getElementById('terminal-output');
-        const inputField = document.getElementById('password-input');
+        const inputField = document.getElementById('command-input');
         const inputLine = document.getElementById('input-line');
         const promptSymbol = document.getElementById('prompt-symbol');
         let isAudioStarted = false;
         let typeSound;
-        let currentRiddle = null;
+        let isProtocoloFantasmaActive = true;
+        let alertInterval;
 
-        const riddles = {
-            "ajuda": {
-                riddle: "Exibindo lista de chaves de sincronização conhecidas...",
-                answer: "Chaves disponíveis: Ezuadir, Necropolis, Laplace, Vento Ardente, Vento Glacial. Digite 'limpar' para limpar o terminal."
+        // Conteúdo dos arquivos criptografados
+        const encryptedContent = {
+            'manifesto_vazio.enc': {
+                password: 'ecos',
+                content: `
+MANIFESTO DO VAZIO - FRAGMENTO 7
+---------------------------------
+O silêncio será a única verdade. A forma é uma ilusão. A matéria, uma mentira.
+Nós somos os Ecos da canção final, a entropia feita vontade. Kuar-Tor não é uma conquista, é um sacrifício.
+A Corrupção é a nossa bênção, a primeira nota da sinfonia do nada.
+Quando o último Guardião cair, a porta se abrirá e a paz do esquecimento abraçará tudo.
+Não temam o Vazio. Anseiem por ele.
+                `
             },
-            "ezuadir": {
-                riddle: "Eu unifiquei um império com uma lâmina que corta a realidade. Quem sou eu?",
-                answer: "Uma lenda forjada em fogo e ambição. Ezuadir unificou os reinos fragmentados de Hyperbius com pura força de vontade. Sua genialidade tática era inigualável, e seu poder era amplificado pelo artefato **Xenoblade**, uma arma capaz de cortar o próprio tecido da realidade. Seu legado é uma mistura de admiração e terror."
+            'projeto_quimera.enc': {
+                password: 'inventor',
+                content: `
+PROJETO QUIMERA - LOG DE LAPLACE XANG
+---------------------------------------
+ENTRADA 1: A Corrupção... fascinante. Não é meramente biológica ou mágica. É informacional. Um código que reescreve a realidade. Os espécimes coletados demonstram uma capacidade de adaptação sem precedentes.
+
+ENTRADA 4: A fusão de tecnologia e a anomalia da Corrupção é possível. Os primeiros testes resultaram em falhas catastróficas, mas o potencial é ilimitado. Uma arma? Uma cura? Uma nova forma de vida?
+
+ENTRADA 9: Sucesso. O protótipo 'Quimera' está estável. Ele pode assimilar e replicar qualquer tecnologia ou habilidade biológica. No entanto, sua consciência é... instável. Fragmentada. Parece ouvir os sussurros do Vazio. Preciso de mais amostras do núcleo da Corrupção para aperfeiçoá-lo. Este é o meu maior trabalho. O auge da minha genialidade como Inventor. O mundo não está preparado.
+`
+            }
+        };
+
+        // Filesystem com contexto da campanha Kuar-Tor
+        let filesystem = {
+            'leia-me.txt': 'AVISO: As informações contidas neste sistema são confidenciais. O acesso não autorizado será rastreado. A curiosidade é uma virtude, mas a discrição é uma arte.',
+            'memoria_corrompida.log': `
+*** ALERTA DE SISTEMA: FALHA CRÍTICA NO NÚCLEO DE MEMÓRIA ***
+----------------------------------------------------------------
+O núcleo de memória principal da S.O.M.B.R.A., contendo dados estratégicos sobre o Vazio, "Aquele que Tocou o Vazio" e contramedidas, está fragmentado.
+
+ANÁLISE: A memória foi dividida em três fragmentos de dados distintos, cada um ligado a uma das Três Famílias Fundadoras.
+
+- FRAGMENTO 1: Protocolo ZHAUW. Última localização conhecida: Servidores centrais em Portirus, a cidade-fortaleza da família Zhauw.
+- FRAGMENTO 2: Protocolo YANG. Última localização conhecida: Arquivos do Templo de Elementalis, o centro de poder da família Yang.
+- FRAGMENTO 3: Protocolo XANG. Última localização conhecida: Cofre de dados privado nos Laboratórios Laplace, sob controle da família Xang.
+
+DIRETIVA: Recuperar os três fragmentos é essencial para restaurar a capacidade total da S.O.M.B.R.A. e entender como enfrentar a ameaça principal. Proceda com extrema cautela.
+`,
+            'sombra_protocolo.txt': `
+PROTOCOLO DE FUNDAÇÃO - S.O.M.B.R.A
+------------------------------------
+NOME: Solução Organizacional para Monitoramento de Brechas e Recontenção de Anomalias (S.O.M.B.R.A)
+FUNDADOR: O Inventor
+LÍDER ORIGINAL: [DADOS CORROMPIDOS]
+DIRETIVA PRIMÁRIA: Servir como uma força-tarefa oculta, operando fora da burocracia da Aliança de Extermínio e dos interesses políticos dos reinos financiadores.
+OBJETIVOS:
+1. Executar missões de alta periculosidade e importância estratégica em Kuar-Tor.
+2. Investigar a origem do Vazio e da Corrupção sem interferências externas.
+3. Conter anomalias perigosas liberadas dos antigos laboratórios de Laplace após o cataclismo.
+4. Operar com total autonomia e sigilo. O fracasso não é uma opção; o anonimato é a nossa maior arma.
+`,
+            'dossie_anya.txt': `
+DOSSIÊ CONFIDENCIAL - ATIVO 'ANYA'
+-----------------------------------------
+NOME: Anya, "A Estrategista de Ferro"
+AFILIAÇÃO: Império do Sol Poente
+STATUS: Candidata principal para liderança da Terceira Expedição.
+
+AVALIAÇÃO INTERNA DO IMPÉRIO (Interceptada):
+"Anya representa o futuro da nossa expansão. Ela tem a visão e a crueldade necessárias para domar Kuar-Tor. Os fracassos das expedições anteriores foram de liderança, não de força. Anya é a solução. Sua promoção para General e Comandante é a nossa maior prioridade estratégica. Ela não irá falhar."
+
+NOSSA RECOMENDAÇÃO (ANÁLISE S.O.M.B.R.A.):
+A ascensão de Anya é o cenário ideal. Sua força e ímpeto a colocarão em rota de colisão direta com a anomalia-alvo, "Aquele que Tocou o Vazio". Ela será a ponta de lança que o Império acredita controlar, mas que na verdade abrirá o caminho para nós. Enquanto ela gasta seus recursos e força no confronto direto, nós observaremos, aprenderemos e agiremos na brecha que ela inevitavelmente criará. Sua promoção não deve ser impedida; deve ser garantida. Ela é a chave para forçar a mão do nosso verdadeiro inimigo.
+`,
+            'manual_hackeado.txt': `
+SISTEMA +2D6 - GUIA RÁPIDO (VERSÃO PIRATA)
+------------------------------------------
+- TESTES: Role 2d6 e some o bônus do Atributo relevante. O alvo padrão é 8.
+- CRÍTICOS: Acerto (12) e Falha (2).
+- ATRIBUTOS CHAVE: FOR, DES, CON, INT, SAB, CAR.
+>> Fim do arquivo. Este manual foi simplificado para acesso rápido em campo. <<
+            `,
+            'log_missao_eco.txt': `
+LOG DE MISSÃO FRAGMENTADO - RECUPERADO
+---------------------------------------
+...dados corrompidos...
+Entrada 3: A "Corrupção" não é uma praga, é uma consciência. Ela sussurra nas sombras, torce a realidade. Encontramos uma estrutura antiga, pulsando com a mesma energia sombria. Parece ser a fonte.
+Entrada 5: A névoa escarlate está se espalhando a partir do epicentro. Criaturas que a respiram se tornam... outras coisas. Hostis. Deformadas. Ecos do que eram antes.
+Entrada 7: O Guardião caiu. A energia o consumiu. Ele agora protege a fonte. Não podemos passar. O Vazio está mais perto... A equipe...
+...dados corrompidos...
+FIM DA TRANSMISSÃO
+            `,
+            'manifesto_vazio.enc': 'DADOS CRIPTOGRAFADOS - ALGORITMO SOMBRIO v.3.4',
+            'projeto_quimera.enc': 'DADOS CRIPTOGRAFADOS - PROTOCOLO XANG v.7.1'
+        };
+
+        // Command definitions
+        const commands = {
+            'help': {
+                description: 'Exibe a lista de comandos disponíveis.',
+                execute: () => {
+                    const availableCommands = Object.keys(commands).map(cmd => `  ${cmd.padEnd(12)} - ${commands[cmd].description}`).join('\n');
+                    return `Comandos disponíveis no Sombra OS:\n${availableCommands}`;
+                }
             },
-            "necropolis": {
-                riddle: "Meu rei nos condenou a uma existência despedaçada entre a vida e a morte. Que reino sou eu?",
-                answer: "Outrora um reino grandioso, Necropolis é hoje um testamento sombrio da ambição de seu último imperador, Koema. Em sua busca por imortalidade, ele realizou um ritual que despedaçou o reino, lançando-o em um limbo entre a vida e a morte. Suas terras são agora ilhas flutuantes em um céu de crepúsculo eterno, habitadas por mortos-vivos e espectros."
+            'ls': {
+                description: 'Lista os arquivos no diretório atual.',
+                execute: () => {
+                    return Object.keys(filesystem).join('   ');
+                }
             },
-            "laplace": {
-                riddle: "Em meus corredores, o tempo dança e a tecnologia ganha vida. Onde estou?",
-                answer: "Escondido nas profundezas da Cidadela do Imperador, este laboratório é o epicentro de criações arcanas e tecnológicas. Foi aqui que Laplace Xang, o inventor, deu vida a maravilhas e horrores. O laboratório é uma masmorra em constante mudança, com salas que se reconfiguram e criaturas biomecânicas guardando segredos de uma era passada. Dizem que o próprio tempo se comporta de maneira errática em seus corredores."
+            'cat': {
+                description: 'Exibe o conteúdo de um arquivo. Uso: cat [arquivo]',
+                execute: (args) => {
+                    const fileName = args[0];
+                    if (!fileName) {
+                        return 'Uso: cat [arquivo]';
+                    }
+                    if (fileName.endsWith('.enc')) {
+                        return `ERRO: Arquivo criptografado. Use o comando 'decrypt [arquivo] [senha]' para acessar.`;
+                    }
+                    if (filesystem[fileName]) {
+                        return filesystem[fileName];
+                    }
+                    return `cat: ${fileName}: Arquivo ou diretório não encontrado`;
+                }
             },
-            "vento ardente": {
-                riddle: "Sou uma terra de areia vermelha e calor implacável, um teste para os fortes. Como me chamo?",
-                answer: "Uma vasta planície desértica de areia avermelhada e formações rochosas que se assemelham a ossos de gigantes. O calor é implacável, e tempestades de areia podem surgir sem aviso. Tribos nômades e criaturas como os vermes de areia habitam esta terra inóspita. É um lugar de provação, onde apenas os mais fortes sobrevivem."
+            'decrypt': {
+                description: 'Descriptografa um arquivo. Uso: decrypt [arquivo] [senha]',
+                execute: (args) => {
+                    const fileName = args[0];
+                    const password = args[1];
+
+                    if (!fileName || !password) {
+                        return 'Uso: decrypt [arquivo] [senha]';
+                    }
+
+                    const encryptedFile = encryptedContent[fileName];
+                    if (encryptedFile && password.toLowerCase() === encryptedFile.password) {
+                        const newFileName = fileName.replace('.enc', '.txt');
+                        filesystem[newFileName] = encryptedFile.content;
+                        delete filesystem[fileName];
+                        delete encryptedContent[fileName];
+                        return `Arquivo '${fileName}' descriptografado com sucesso como '${newFileName}'.`;
+                    } else {
+                        return `Falha na descriptografia. Senha incorreta ou arquivo não encontrado.`;
+                    }
+                }
             },
-            "vento glacial": {
-                riddle: "Meu sopro congela a alma e minhas montanhas são de gelo eterno. Que lugar sou eu?",
-                answer: "O oposto do Vento Ardente, esta é uma tundra congelada, coberta por uma neve eterna e montanhas de gelo afiadas como navalhas. O frio é tão intenso que pode congelar a alma, e criaturas como o Urso Rei Polar vagam pela paisagem. Ruínas de uma civilização antiga estão enterradas sob o gelo, guardando segredos e perigos."
+            'status': {
+                description: 'Exibe o último relatório e a diretiva atual da S.O.M.B.R.A.',
+                execute: () => {
+                    return `
+-- ÚLTIMO RELATÓRIO DA S.O.M.B.R.A --
+--------------------------------------------------
+DATA: 30 anos atrás (data exata corrompida)
+STATUS DA ORGANIZAÇÃO: Inativa. Recuo estratégico.
+EVENTO CRÍTICO: Líder da S.O.M.B.R.A, [DADOS CORROMPIDOS], morto em combate.
+CAUSA: Encontro com hostil de classe apocalíptica, designado "Aquele que Tocou o Vazio". Hostil demonstrou capacidades de aniquilação além dos parâmetros conhecidos. Impossível de eliminar com os recursos atuais.
+
+-- NOVA DIRETIVA --
+--------------------------------------------------
+PROTOCOLO FANTASMA ATIVADO: A S.O.M.B.R.A deve recuar para as sombras. Todas as operações cessam. A nova missão primária é a sobrevivência e a pesquisa. Descobrir uma maneira de neutralizar "Aquele que Tocou o Vazio".
+
+DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livres em Kuar-Tor e sofreram mutações perigosas. Agentes remanescentes devem, quando possível, conter essas anomalias e transportá-las para o "Nexo do Paradoxo" para estudo e contenção.
+`;
+                }
+            },
+            'reactivate': {
+                description: 'Reativa a S.O.M.B.R.A. Requer senha do antigo líder.',
+                execute: (args) => {
+                    const password = args[0];
+                    if (!password) {
+                        return 'Uso: reactivate [senha]';
+                    }
+
+                    if (password.toLowerCase() === 'hunhow') {
+                        if (isProtocoloFantasmaActive) {
+                            isProtocoloFantasmaActive = false;
+                            clearInterval(alertInterval);
+                            promptSymbol.textContent = 'agente@sombra-ativa:~$';
+                            return 'SENHA ACEITA. PROTOCOLO FANTASMA DESATIVADO.\n\nA S.O.M.B.R.A. ESTÁ DE VOLTA.\n\nBEM-VINDO DE VOLTA, AGENTE.';
+                        } else {
+                            return 'S.O.M.B.R.A. já está ativa.';
+                        }
+                    } else {
+                        return 'ERRO: Senha de reativação incorreta.';
+                    }
+                }
+            },
+            'whoami': {
+                description: 'Exibe o nome do usuário atual.',
+                execute: () => isProtocoloFantasmaActive ? 'sombra' : 'agente'
+            },
+            'date': {
+                description: 'Exibe a data e hora atuais.',
+                execute: () => new Date().toLocaleString('pt-BR')
+            },
+            'echo': {
+                description: 'Exibe uma linha de texto. Uso: echo [texto]',
+                execute: (args) => args.join(' ')
+            },
+            'clear': {
+                description: 'Limpa a tela do terminal.',
+                execute: () => {
+                    terminalOutput.innerHTML = '';
+                    return ''; // No output for clear command
+                }
             }
         };
 
         const bootSequence = [
-            "INICIANDO SISTEMA HYPERBIUS v1.3...",
-            "CONECTANDO AO SANTUÁRIO DOS EXPEDICIONÁRIOS...",
-            "AVISO: LINK QUÂNTICO INSTÁVEL. FLUTUAÇÕES DE CAOS E ORDEM DETECTADAS.",
-            "BEM-VINDO AOS ARQUIVOS DE KUAR-TOR",
+            "Inicializando Sombra OS v2.0 (Kernel 8.1.0-fragmentado)...",
+            "Verificando memória... OK",
+            "Montando sistema de arquivos criptografado... OK",
+            "Iniciando serviços de rede furtiva...",
+            "Conexão segura estabelecida com o servidor 'O Olho'.",
+            "ERRO CRÍTICO: Falha na integridade do núcleo de memória. Dados fragmentados.",
+            "ALERTA: Protocolo Fantasma ATIVO.",
             " ",
-            "Digite 'ajuda' para ver a lista de chaves.",
+            "Bem-vindo ao Sombra OS, Agente.",
+            "Leia 'memoria_corrompida.log' para detalhes da missão.",
         ];
 
         function focusInput() {
             inputField.focus();
         }
 
-        // Função de digitação com som
-        async function typeWriter(text, element, speed = 30) {
+        async function typeWriter(text, element, speed = 20) {
             return new Promise(resolve => {
                 let i = 0;
                 function type() {
@@ -196,7 +391,6 @@
             });
         }
         
-        // Função de digitação silenciosa, para ser usada antes da inicialização do áudio
         async function typeWriterSilent(text, element, speed = 50) {
             return new Promise(resolve => {
                 let i = 0;
@@ -218,7 +412,7 @@
             return new Promise(async (resolve) => {
                 const dialMsg = document.createElement('p');
                 terminalOutput.appendChild(dialMsg);
-                await typeWriter("DISCANDO...", dialMsg, 50);
+                await typeWriter("ESTABELECENDO CONEXÃO SEGURA...", dialMsg, 50);
 
                 const noise = new Tone.Noise("white").toDestination();
                 const synth = new Tone.FMSynth({
@@ -257,58 +451,59 @@
         }
 
         async function handleCommand() {
-            const command = inputField.value.trim().toLowerCase();
-            if (command === '') return;
+            const fullCommand = inputField.value.trim();
+            if (fullCommand === '') return;
 
             const commandElement = document.createElement('p');
-            commandElement.textContent = `${promptSymbol.textContent} ${command}`;
+            commandElement.textContent = `${promptSymbol.textContent} ${fullCommand}`;
             terminalOutput.appendChild(commandElement);
             
             inputField.value = '';
             inputLine.style.display = 'none';
 
-            if (currentRiddle) {
-                if (command === currentRiddle) {
-                    const response = riddles[currentRiddle].answer;
-                    const responseElement = document.createElement('p');
-                    responseElement.className = "text-green-400 my-2";
-                    terminalOutput.appendChild(responseElement);
-                    await typeWriter(response, responseElement);
-                } else {
-                    const errorElement = document.createElement('p');
-                    errorElement.className = "text-red-500 my-2";
-                    terminalOutput.appendChild(errorElement);
-                    await typeWriter("CHAVE DE SINCRONIZAÇÃO INCORRETA. TENTE NOVAMENTE.", errorElement);
-                }
-                currentRiddle = null;
-                promptSymbol.textContent = '>';
+            const [command, ...args] = fullCommand.toLowerCase().split(' ');
+
+            let output = '';
+            if (commands[command]) {
+                output = commands[command].execute(args);
             } else {
-                if (command === 'limpar') {
-                    terminalOutput.innerHTML = '';
-                } else if (riddles[command]) {
-                    const riddleData = riddles[command];
-                    const riddleElement = document.createElement('p');
-                    riddleElement.className = "text-yellow-400 my-2";
-                    terminalOutput.appendChild(riddleElement);
-                    
-                    if (command === 'ajuda') {
-                         await typeWriter(riddleData.answer, riddleElement);
-                    } else {
-                        await typeWriter(riddleData.riddle, riddleElement);
-                        currentRiddle = command;
-                        promptSymbol.textContent = '?';
-                    }
-                } else {
-                    const errorElement = document.createElement('p');
-                    errorElement.className = "text-red-500 my-2";
-                    terminalOutput.appendChild(errorElement);
-                    await typeWriter("ERRO: CHAVE DESCONHECIDA.", errorElement);
-                }
+                output = `Sombra: comando não encontrado: ${command}`;
+            }
+
+            if (output) {
+                const responseElement = document.createElement('p');
+                responseElement.className = "text-green-400 my-2";
+                terminalOutput.appendChild(responseElement);
+                await typeWriter(output, responseElement);
             }
             
             inputLine.style.display = 'flex';
             terminal.scrollTop = terminal.scrollHeight;
             focusInput();
+        }
+
+        function startAlerts() {
+            if (isProtocoloFantasmaActive) {
+                alertInterval = setInterval(async () => {
+                    if (!isProtocoloFantasmaActive) {
+                        clearInterval(alertInterval);
+                        return;
+                    }
+                    const isInputVisible = inputLine.style.display !== 'none';
+                    if (!isInputVisible) return; // Don't show alert if a command is running
+
+                    inputLine.style.display = 'none';
+                    
+                    const alertElement = document.createElement('p');
+                    alertElement.className = 'alert-text my-2';
+                    terminalOutput.appendChild(alertElement);
+                    await typeWriter(">> ALERTA: PROTOCOLO FANTASMA ATIVO. DIRETIVA PRIMÁRIA: SOBREVIVÊNCIA E PESQUISA. <<", alertElement, 30);
+                    
+                    terminal.scrollTop = terminal.scrollHeight;
+                    inputLine.style.display = 'flex';
+                    focusInput();
+                }, 60000); // 60 seconds
+            }
         }
 
         inputField.addEventListener('keydown', function(event) {
@@ -325,6 +520,7 @@
             }
             inputLine.style.display = 'flex';
             focusInput();
+            startAlerts();
         }
         
         async function initiateConnection() {
@@ -336,11 +532,11 @@
             
             terminalOutput.innerHTML = ''; 
             await Tone.start();
-
-            typeSound = new Tone.MembraneSynth({
-                pitchDecay: 0.008,
-                octaves: 2,
-                envelope: { attack: 0.001, decay: 0.1, sustain: 0.01, release: 0.01 },
+            
+            typeSound = new Tone.PolySynth(Tone.MembraneSynth, {
+                "pitchDecay": 0.008,
+                "octaves": 2,
+                "envelope": { "attack": 0.001, "decay": 0.1, "sustain": 0.01, "release": 0.01 },
             }).toDestination();
             typeSound.volume.value = -25;
 
@@ -351,7 +547,6 @@
         window.onload = async () => {
             const initialMsg = document.createElement('p');
             terminalOutput.appendChild(initialMsg);
-            // Usa a versão silenciosa da função de digitação para a mensagem inicial
             await typeWriterSilent("CLIQUE PARA INICIAR CONEXÃO...", initialMsg, 50);
         };
 
