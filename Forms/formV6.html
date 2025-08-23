@@ -309,11 +309,11 @@
                                     <tr class="bg-neutral-800/30">
                                         <td class="p-2 border-b border-r border-neutral-700 font-bold">5</td>
                                         <td class="p-2 border-b border-r border-neutral-700">5</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">5d6+10</td>
                                         <td class="p-2 border-b border-r border-neutral-700">RD 10</td>
                                         <td class="p-2 border-b border-r border-neutral-700">100m / 20x20m</td>
                                         <td class="p-2 border-b border-r border-neutral-700">5d6 Rod.</td>
                                         <td class="p-2 border-b border-neutral-700">16</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">5d6+10</td>
                                     </tr>
                                     <tr>
                                         <td class="p-2 border-r border-neutral-700 font-bold">6+</td>
@@ -389,6 +389,37 @@
             <div class="mt-6 text-right"><button id="savePvdButton" class="action-button action-button-primary px-4 py-2">Concluir Edição</button></div>
         </div>
     </div>
+    
+    <!-- Modal de Confirmação -->
+    <div id="custom-confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="modal-title">Confirmação</h3>
+                <button id="custom-cancel-button" class="modal-close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="custom-confirm-message"></p>
+            </div>
+            <div class="mt-6 text-right space-x-2">
+                <button id="custom-cancel-button-footer" class="action-button action-button-secondary px-4 py-2">Cancelar</button>
+                <button id="custom-confirm-button" class="action-button action-button-primary px-4 py-2">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Alerta -->
+    <div id="alert-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="alert-modal-title" class="modal-title"></h3>
+                <button id="alert-modal-close" class="modal-close-button" title="Fechar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="alert-modal-message"></p>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
         // --- IMPORTAÇÕES DO FIREBASE ---
@@ -413,7 +444,7 @@
         // --- VARIÁVEIS GLOBAIS DE ESTADO ---
         let currentUserId = null;
         let currentSheetId = null;
-        let unsubscribeFromSheets = null; // Função para parar de ouvir as atualizações do Firestore
+        let unsubscribeFromSheets = null;
 
         // A lógica principal da aplicação é executada somente após a autenticação
         onAuthStateChanged(auth, async (user) => {
@@ -781,7 +812,6 @@
                 currentSheetId = sheetIdToSave;
             } catch (error) {
                 console.error("Erro ao salvar ficha:", error);
-                // Usando uma caixa de diálogo personalizada em vez de alert()
                 showModalMessage('Erro', 'Falha ao salvar a ficha. Verifique sua conexão e tente novamente.');
             }
         }
@@ -842,7 +872,6 @@
         function deleteSheetFromFirestore(sheetId) {
             if (!currentUserId || !sheetId) return;
             
-            // Usando uma caixa de diálogo personalizada em vez de confirm()
             const confirmModal = document.getElementById('custom-confirm-modal');
             const confirmButton = document.getElementById('custom-confirm-button');
             const cancelButton = document.getElementById('custom-cancel-button');
@@ -880,7 +909,6 @@
         }
 
         function showModalMessage(title, message) {
-            // Cria um modal dinamicamente ou usa um pré-existente
             let modal = document.getElementById('alert-modal');
             if (!modal) {
                 modal = document.createElement('div');
@@ -908,7 +936,6 @@
 
         // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Os event listeners do DOM são mantidos aqui, mas o comportamento de salvar/carregar é delegado às funções do Firebase.
             Object.values(allAtributosInputs).forEach(input => input.addEventListener('input', updateAllStats));
             tradicaoMagicaSelect.addEventListener('input', updateAllStats);
             addCaminhoBtn.addEventListener('click', () => adicionarCaminho());
@@ -923,6 +950,10 @@
 
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
+                // Gera um novo ID apenas se não houver um ID de ficha atual
+                if (!currentSheetId) {
+                    currentSheetId = crypto.randomUUID();
+                }
                 saveSheetToFirestore();
                 
                 const data = getFormAsJson();
@@ -995,23 +1026,30 @@
                 a.click();
                 URL.revokeObjectURL(url);
             });
+
+            // Lógica de importação de arquivo JSON corrigida.
             importSheetButton.addEventListener('click', () => fileInput.click());
             fileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
-                if (file && currentUserId) {
-                    const reader = new FileReader();
-                    reader.onload = async (event) => {
+                if (!file || !currentUserId) return;
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
                         const data = JSON.parse(event.target.result);
                         loadFormFromJson(data);
-                        currentSheetId = crypto.randomUUID(); // Cria um novo ID para a ficha importada
-                        await saveSheetToFirestore(); // Salva a nova ficha no Firestore
-                        // Não é necessário chamar loadSavedSheetsFromFirestore() aqui, pois o onSnapshot cuidará disso
-                    };
-                    reader.readAsText(file);
-                }
+                        currentSheetId = crypto.randomUUID(); 
+                        await saveSheetToFirestore();
+                        showModalMessage('Importação Concluída', 'A ficha foi importada com sucesso e salva na nuvem.');
+                    } catch (error) {
+                        console.error("Erro ao importar ficha:", error);
+                        showModalMessage('Erro na Importação', 'O arquivo selecionado não é um arquivo de ficha JSON válido.');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = ''; // Limpa o input para que o evento 'change' dispare novamente se o mesmo arquivo for selecionado.
             });
 
-            // Adiciona o modal de confirmação para a função deleteSheetFromFirestore
             const modalHtml = `
                 <div id="custom-confirm-modal" class="modal hidden">
                     <div class="modal-content">
@@ -1032,6 +1070,22 @@
             document.body.insertAdjacentHTML('beforeend', modalHtml);
             document.getElementById('custom-cancel-button').addEventListener('click', () => document.getElementById('custom-confirm-modal').classList.add('hidden'));
             document.getElementById('custom-cancel-button-footer').addEventListener('click', () => document.getElementById('custom-confirm-modal').classList.add('hidden'));
+            
+            const alertModalHtml = `
+                <div id="alert-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 id="alert-modal-title" class="modal-title"></h3>
+                            <button id="alert-modal-close" class="modal-close-button" title="Fechar">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p id="alert-modal-message"></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', alertModalHtml);
+            document.getElementById('alert-modal-close').addEventListener('click', () => document.getElementById('alert-modal').classList.add('hidden'));
         });
     }
     </script>
