@@ -103,10 +103,6 @@
         <header class="text-center mb-8">
             <h1 class="text-4xl sm:text-5xl font-bold font-cinzel text-violet-300 tracking-wider">Nexo do Paradoxo</h1>
             <p class="text-lg text-gray-400 mt-2">Um refúgio forjado entre a Ordem e o Caos.</p>
-            <div class="mt-6 inline-flex items-center justify-center bg-gray-900/50 border border-violet-500/50 rounded-full px-6 py-3 shadow-lg">
-                <span class="text-2xl font-bold text-violet-300" id="fragmentos-display">10000</span>
-                <span class="ml-3 text-lg text-gray-400">Fragmentos do Vazio</span>
-            </div>
         </header>
 
         <!-- Grid de Cômodos -->
@@ -143,7 +139,6 @@
     <script>
         // --- ESTADO INICIAL DO JOGO ---
         const gameState = {
-            fragmentosDoVazio: 10000,
             comodos: [
                 { id: 'forja', nome: 'Forja', disponivel: true, custo: 0, descricao: "O coração pulsante do Nexo, onde o metal bruto é domado pelo fogo e pela vontade.", acoes: [
                     { nome: 'Forjar Equipamento Padrão', desc: 'Crie armas e armaduras comuns.' },
@@ -220,7 +215,6 @@
         };
 
         // --- ELEMENTOS DO DOM ---
-        const fragmentosDisplay = document.getElementById('fragmentos-display');
         const comodosGrid = document.getElementById('comodos-grid');
         const logContainer = document.getElementById('log-container');
         const modal = document.getElementById('modal-acoes');
@@ -243,11 +237,6 @@
             p.textContent = `> ${mensagem}`;
             logContainer.appendChild(p);
             logContainer.scrollTop = logContainer.scrollHeight; // Auto-scroll
-        }
-
-        /** Atualiza a exibição de fragmentos */
-        function atualizarDisplayFragmentos() {
-            fragmentosDisplay.textContent = gameState.fragmentosDoVazio;
         }
 
         /** Renderiza todos os cômodos na tela */
@@ -273,7 +262,7 @@
                             <h3 class="text-2xl font-cinzel text-gray-500 mb-2">${comodo.nome}</h3>
                             <p class="text-gray-400 mb-4">Bloqueado</p>
                             <button class="btn-primary text-white font-bold py-2 px-6 rounded-lg w-full btn-desbloquear" data-id="${comodo.id}">
-                                Desbloquear (${comodo.custo} FdV)
+                                Desbloquear
                             </button>
                         </div>
                     `;
@@ -295,15 +284,9 @@
             const comodo = gameState.comodos.find(c => c.id === comodoId);
             if (!comodo) return;
 
-            if (gameState.fragmentosDoVazio >= comodo.custo) {
-                gameState.fragmentosDoVazio -= comodo.custo;
-                comodo.disponivel = true;
-                adicionarLog(`Cômodo "${comodo.nome}" desbloqueado com sucesso!`, 'sucesso');
-                atualizarDisplayFragmentos();
-                renderizarComodos();
-            } else {
-                adicionarLog(`Fragmentos do Vazio insuficientes para desbloquear "${comodo.nome}".`, 'erro');
-            }
+            comodo.disponivel = true;
+            adicionarLog(`Cômodo "${comodo.nome}" desbloqueado com sucesso!`, 'sucesso');
+            renderizarComodos();
         }
 
         /** Abre e popula o modal de ações */
@@ -341,7 +324,6 @@
 
         // --- INICIALIZAÇÃO ---
         function init() {
-            atualizarDisplayFragmentos();
             renderizarComodos();
             
             // Event Listeners do Modal
