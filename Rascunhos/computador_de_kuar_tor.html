@@ -111,10 +111,21 @@
             from, to { background-color: transparent; }
             50% { background-color: #00ff41; }
         }
+        
+        .alert-text {
+            color: #ff0000;
+            text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000;
+            animation: blink-red-text 1.5s step-end infinite;
+        }
+
+        @keyframes blink-red-text {
+            from, to { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
     </style>
 </head>
 <body>
-
     <div class="vhs-wrapper">
         <div id="terminal" class="terminal content-glitch" onclick="initiateConnection()">
             <div id="terminal-output" class="text-sm md:text-base"></div>
@@ -133,56 +144,86 @@
         const promptSymbol = document.getElementById('prompt-symbol');
         let isAudioStarted = false;
         let typeSound;
+        let isProtocoloFantasmaActive = true;
+        let alertInterval;
+        let areFragmentsCollected = false;
+
+        // Conteúdo dos arquivos criptografados
+        const encryptedContent = {
+            'manifesto_vazio.enc': {
+                password: 'ecos',
+                content: `
+MANIFESTO DO VAZIO - FRAGMENTO 7
+---------------------------------
+O silêncio será a única verdade. A forma é uma ilusão. A matéria, uma mentira.
+Nós somos os Ecos da canção final, a entropia feita vontade. Kuar-Tor não é uma conquista, é um sacrifício.
+A Corrupção é a nossa bênção, a primeira nota da sinfonia do nada.
+Quando o último Guardião cair, a porta se abrirá e a paz do esquecimento abraçará tudo.
+Não temam o Vazio. Anseiem por ele.
+                `
+            },
+            'projeto_quimera.enc': {
+                password: 'inventor',
+                content: `
+PROJETO QUIMERA - LOG DE LAPLACE XANG
+---------------------------------------
+ENTRADA 1: A Corrupção... fascinante. Não é meramente biológica ou mágica. É informacional. Um código que reescreve a realidade. Os espécimes coletados demonstram uma capacidade de adaptação sem precedentes.
+
+ENTRADA 4: A fusão de tecnologia e a anomalia da Corrupção é possível. Os primeiros testes resultaram em falhas catastróficas, mas o potencial é ilimitado. Uma arma? Uma cura? Uma nova forma de vida?
+
+ENTRADA 9: Sucesso. O protótipo 'Quimera' está estável. Ele pode assimilar e replicar qualquer tecnologia ou habilidade biológica. No entanto, sua consciência é... instável. Fragmentada. Parece ouvir os sussurros do Vazio. Preciso de mais amostras do núcleo da Corrupção para aperfeiçoá-lo. Este é o meu maior trabalho. O auge da minha genialidade como Inventor. O mundo não está preparado.
+`
+            }
+        };
 
         // Filesystem com contexto da campanha Kuar-Tor
-        const filesystem = {
+        let filesystem = {
             'leia-me.txt': 'AVISO: As informações contidas neste sistema são confidenciais. O acesso não autorizado será rastreado. A curiosidade é uma virtude, mas a discrição é uma arte.',
-            'relatorio_faccoes.txt': `
-RELATÓRIO DE INTELIGÊNCIA - FACÇÕES DE KUAR-TOR
------------------------------------------------
+            'memoria_corrompida.log': `
+*** ALERTA DE SISTEMA: FALHA CRÍTICA NO NÚCLEO DE MEMÓRIA ***
+----------------------------------------------------------------
+O núcleo de memória principal da S.O.M.B.R.A., contendo dados estratégicos sobre o Vazio, "Aquele que Tocou o Vazio" e contramedidas, está fragmentado.
 
-- A Aliança: Conglomerado de guildas, reinos e repúblicas. Foco em comércio, diplomacia e defesa mútua. Atualmente lideram a exploração de Kuar-Tor.
+ANÁLISE: A memória foi dividida em três fragmentos de dados distintos, cada um ligado a uma das Três Famílias Fundadoras.
 
-- A Horda: Tribos e clãs de regiões selvagens. Valorizam força, honra e tradição. Relação complexa com a Aliança, alternando entre conflito e cooperação.
+- FRAGMENTO 1: Protocolo ZHAUW. Última localização conhecida: Servidores centrais em Portirus, a cidade-fortaleza da família Zhauw.
+- FRAGMENTO 2: Protocolo YANG. Última localização conhecida: Arquivos do Templo de Elementalis, o centro de poder da família Yang.
+- FRAGMENTO 3: Protocolo XANG. Última localização conhecida: Cofre de dados privado nos Laboratórios Laplace, sob controle da família Xang.
 
-- Império do Sol Poente: Nação expansionista com poderio militar e tecnológico. Veem Kuar-Tor como uma fronteira a ser dominada e explorada.
-
-- Culto do Vazio: Seita apocalíptica que venera o Vazio, uma força cósmica de aniquilação. Acreditam que Kuar-Tor é a chave para a chegada de sua entidade.
-
-- As Três Famílias (Yang, Xang, Zhauw): Clãs poderosos com influência política e econômica massiva. Manipulam eventos por trás dos panos para manter seu poder.
-            `,
+DIRETIVA: Recuperar os três fragmentos é essencial para restaurar a capacidade total da S.O.M.B.R.A. e entender como enfrentar a ameaça principal. A restauração completa desbloqueará novas capacidades de análise de dados. Proceda com extrema cautela.
+`,
+            'sombra_protocolo.txt': `
+PROTOCOLO DE FUNDAÇÃO - S.O.M.B.R.A
+------------------------------------
+NOME: Solução Organizacional para Monitoramento de Brechas e Recontenção de Anomalias (S.O.M.B.R.A)
+FUNDADOR: O Inventor
+LÍDER ORIGINAL: [DADOS CORROMPIDOS]
+DIRETIVA PRIMÁRIA: Servir como uma força-tarefa oculta, operando fora da burocracia da Aliança de Extermínio e dos interesses políticos dos reinos financiadores.
+OBJETIVOS:
+1. Executar missões de alta periculosidade e importância estratégica em Kuar-Tor.
+2. Investigar a origem do Vazio e da Corrupção sem interferências externas.
+3. Conter anomalias perigosas liberadas dos antigos laboratórios de Laplace após o cataclismo.
+4. Operar com total autonomia e sigilo. O fracasso não é uma opção; o anonimato é a nossa maior arma.
+`,
             'dossie_anya.txt': `
-DOSSIÊ CONFIDENCIAL - ALVO: GENERAL ANYA
+DOSSIÊ CONFIDENCIAL - ATIVO 'ANYA'
 -----------------------------------------
-
 NOME: Anya, "A Estrategista de Ferro"
 AFILIAÇÃO: Império do Sol Poente
-CARGO: Comandante da Terceira Expedição para Kuar-Tor
-PERFIL: Tática brilhante e líder implacável. Leal ao Império, mas possui um forte senso de honra pessoal. Não subestime sua capacidade de adaptação no campo de batalha. É conhecida por utilizar tanto tecnologia avançada quanto táticas de guerrilha.
-OBSERVAÇÕES: A Terceira Expedição sob seu comando é a mais bem equipada até agora. Seus objetivos em Kuar-Tor parecem ir além da simples conquista territorial. Monitorar suas ações é prioridade máxima.
-            `,
+STATUS: Candidata principal para liderança da Terceira Expedição.
+
+AVALIAÇÃO INTERNA DO IMPÉRIO (Interceptada):
+"Anya representa o futuro da nossa expansão. Ela tem a visão e a crueldade necessárias para domar Kuar-Tor. Os fracassos das expedições anteriores foram de liderança, não de força. Anya é a solução. Sua promoção para General e Comandante é a nossa maior prioridade estratégica. Ela não irá falhar."
+
+NOSSA RECOMENDAÇÃO (ANÁLISE S.O.M.B.R.A.):
+A ascensão de Anya é o cenário ideal. Sua força e ímpeto a colocarão em rota de colisão direta com a anomalia-alvo, "Aquele que Tocou o Vazio". Ela será a ponta de lança que o Império acredita controlar, mas que na verdade abrirá o caminho para nós. Enquanto ela gasta seus recursos e força no confronto direto, nós observaremos, aprenderemos e agiremos na brecha que ela inevitavelmente criará. Sua promoção não deve ser impedida; deve ser garantida. Ela é a chave para forçar a mão do nosso verdadeiro inimigo.
+`,
             'manual_hackeado.txt': `
 SISTEMA +2D6 - GUIA RÁPIDO (VERSÃO PIRATA)
 ------------------------------------------
-
 - TESTES: Role 2d6 e some o bônus do Atributo relevante. O alvo padrão é 8.
-  - Sucesso: Resultado 8 ou mais.
-  - Falha: Resultado 7 ou menos.
-
-- TESTES OPOSTOS: Ambos os lados rolam 2d6 + Atributo. O maior resultado vence.
-
-- CRÍTICOS:
-  - Acerto Crítico (rolagem 12 nos dados): Sucesso excepcional. Causa dano máximo ou efeito ampliado.
-  - Falha Crítica (rolagem 2 nos dados): Falha desastrosa. Algo muito ruim acontece.
-
-- ATRIBUTOS CHAVE:
-  - FOR (Força): Combate corpo a corpo, levantar peso.
-  - DES (Destreza): Combate à distância, agilidade, furtividade.
-  - CON (Constituição): Pontos de Vida, resistência a venenos/doenças.
-  - INT (Inteligência): Conhecimento, tecnologia, investigação.
-  - SAB (Sabedoria): Percepção, intuição, força de vontade.
-  - CAR (Carisma): Liderança, persuasão, social.
-
+- CRÍTICOS: Acerto (12) e Falha (2).
+- ATRIBUTOS CHAVE: FOR, DES, CON, INT, SAB, CAR.
 >> Fim do arquivo. Este manual foi simplificado para acesso rápido em campo. <<
             `,
             'log_missao_eco.txt': `
@@ -190,13 +231,13 @@ LOG DE MISSÃO FRAGMENTADO - RECUPERADO
 ---------------------------------------
 ...dados corrompidos...
 Entrada 3: A "Corrupção" não é uma praga, é uma consciência. Ela sussurra nas sombras, torce a realidade. Encontramos uma estrutura antiga, pulsando com a mesma energia sombria. Parece ser a fonte.
-
 Entrada 5: A névoa escarlate está se espalhando a partir do epicentro. Criaturas que a respiram se tornam... outras coisas. Hostis. Deformadas. Ecos do que eram antes.
-
 Entrada 7: O Guardião caiu. A energia o consumiu. Ele agora protege a fonte. Não podemos passar. O Vazio está mais perto... A equipe...
 ...dados corrompidos...
 FIM DA TRANSMISSÃO
-            `
+            `,
+            'manifesto_vazio.enc': 'DADOS CRIPTOGRAFADOS - ALGORITMO SOMBRIO v.3.4',
+            'projeto_quimera.enc': 'DADOS CRIPTOGRAFADOS - PROTOCOLO XANG v.7.1'
         };
 
         // Command definitions
@@ -204,7 +245,7 @@ FIM DA TRANSMISSÃO
             'help': {
                 description: 'Exibe a lista de comandos disponíveis.',
                 execute: () => {
-                    const availableCommands = Object.keys(commands).map(cmd => `  ${cmd.padEnd(10)} - ${commands[cmd].description}`).join('\n');
+                    const availableCommands = Object.keys(commands).filter(cmd => !cmd.startsWith('_')).map(cmd => `  ${cmd.padEnd(12)} - ${commands[cmd].description}`).join('\n');
                     return `Comandos disponíveis no Sombra OS:\n${availableCommands}`;
                 }
             },
@@ -221,15 +262,110 @@ FIM DA TRANSMISSÃO
                     if (!fileName) {
                         return 'Uso: cat [arquivo]';
                     }
+                    if (fileName.endsWith('.enc')) {
+                        return `ERRO: Arquivo criptografado. Use o comando 'decrypt [arquivo] [senha]' para acessar.`;
+                    }
                     if (filesystem[fileName]) {
                         return filesystem[fileName];
                     }
                     return `cat: ${fileName}: Arquivo ou diretório não encontrado`;
                 }
             },
+            'decrypt': {
+                description: 'Descriptografa um arquivo. Uso: decrypt [arquivo] [senha]',
+                execute: (args) => {
+                    const fileName = args[0];
+                    const password = args[1];
+
+                    if (!fileName || !password) {
+                        return 'Uso: decrypt [arquivo] [senha]';
+                    }
+
+                    const encryptedFile = encryptedContent[fileName];
+                    if (encryptedFile && password.toLowerCase() === encryptedFile.password) {
+                        const newFileName = fileName.replace('.enc', '.txt');
+                        filesystem[newFileName] = encryptedFile.content;
+                        delete filesystem[fileName];
+                        delete encryptedContent[fileName];
+                        return `Arquivo '${fileName}' descriptografado com sucesso como '${newFileName}'.`;
+                    } else {
+                        return `Falha na descriptografia. Senha incorreta ou arquivo não encontrado.`;
+                    }
+                }
+            },
+            'status': {
+                description: 'Exibe o último relatório e a diretiva atual da S.O.M.B.R.A.',
+                execute: () => {
+                    return `
+-- ÚLTIMO RELATÓRIO DA S.O.M.B.R.A --
+--------------------------------------------------
+DATA: 30 anos atrás (data exata corrompida)
+STATUS DA ORGANIZAÇÃO: Inativa. Recuo estratégico.
+EVENTO CRÍTICO: Líder da S.O.M.B.R.A, [DADOS CORROMPIDOS], morto em combate.
+CAUSA: Encontro com hostil de classe apocalíptica, designado "Aquele que Tocou o Vazio". Hostil demonstrou capacidades de aniquilação além dos parâmetros conhecidos. Impossível de eliminar com os recursos atuais.
+
+-- NOVA DIRETIVA --
+--------------------------------------------------
+PROTOCOLO FANTASMA ATIVADO: A S.O.M.B.R.A deve recuar para as sombras. Todas as operações cessam. A nova missão primária é a sobrevivência e a pesquisa. Descobrir uma maneira de neutralizar "Aquele que Tocou o Vazio".
+
+DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livres em Kuar-Tor e sofreram mutações perigosas. Agentes remanescentes devem, quando possível, conter essas anomalias e transportá-las para o "Nexo do Paradoxo" para estudo e contenção.
+`;
+                }
+            },
+            'reactivate': {
+                description: 'Reativa a S.O.M.B.R.A. Requer senha do antigo líder.',
+                execute: (args) => {
+                    const password = args[0];
+                    if (!password) {
+                        return 'Uso: reactivate [senha]';
+                    }
+
+                    if (password.toLowerCase() === 'hunhow') {
+                        if (isProtocoloFantasmaActive) {
+                            isProtocoloFantasmaActive = false;
+                            clearInterval(alertInterval);
+                            promptSymbol.textContent = 'agente@sombra-ativa:~$';
+                            return 'SENHA ACEITA. PROTOCOLO FANTASMA DESATIVADO.\n\nSINAL DE REATIVAÇÃO ENVIADO.\nTODOS OS AGENTES DA S.O.M.B.R.A. FORAM CONVOCADOS.\n\nPONTO DE ENCONTRO: KUAR-TOR.\n\nA MISSÃO CONTINUA.';
+                        } else {
+                            return 'S.O.M.B.R.A. já está ativa.';
+                        }
+                    } else {
+                        return 'ERRO: Senha de reativação incorreta.';
+                    }
+                }
+            },
+            'analyze': {
+                description: 'Analisa os dados recuperados do núcleo de memória.',
+                execute: () => {
+                    if (areFragmentsCollected) {
+                        return `
+ANÁLISE DO NÚCLEO DE MEMÓRIA RESTAURADO
+---------------------------------------
+DADOS RECUPERADOS: Entrada para a "Árvore do Imperador".
+
+A Árvore não é uma estrutura biológica, mas uma bio-máquina senciente que serve como um portão ou condutor. A entrada física é selada por uma barreira de energia ressonante.
+
+PROTOCOLO DE ACESSO: A barreira é sintonizada com a 'assinatura vital' do Imperador original. Para atravessá-la, é necessário um objeto imbuído com essa assinatura ou um ser que a compartilhe.
+
+DADOS ADICIONAIS: Fragmentos recuperados sugerem a existência de três 'chaves' criadas pelo Inventor: artefatos que podem replicar a assinatura necessária. Suas localizações são desconhecidas, mas provavelmente estão em locais de grande poder ou importância para as Três Famílias.
+
+CONCLUSÃO: Encontrar uma das chaves ou uma alternativa viável é o único método conhecido para entrar na Árvore do Imperador.
+`;
+                    } else {
+                        return 'ERRO: Análise impossível. O núcleo de memória está incompleto. Recupere os três fragmentos para continuar.';
+                    }
+                }
+            },
+            '_collect_fragments': { // Comando de Mestre, não visível no help
+                description: 'Simula a coleta dos fragmentos de memória.',
+                execute: () => {
+                    areFragmentsCollected = true;
+                    return 'Simulação: Fragmentos de memória das famílias Zhauw, Yang e Xang recuperados. O núcleo de memória está completo. O comando "analyze" agora está disponível.';
+                }
+            },
             'whoami': {
                 description: 'Exibe o nome do usuário atual.',
-                execute: () => 'sombra'
+                execute: () => isProtocoloFantasmaActive ? 'sombra' : 'agente'
             },
             'date': {
                 description: 'Exibe a data e hora atuais.',
@@ -249,15 +385,16 @@ FIM DA TRANSMISSÃO
         };
 
         const bootSequence = [
-            "Inicializando Sombra OS v1.1 (Kernel 6.8.0-kuartor)...",
+            "Inicializando Sombra OS v2.2 (Kernel 8.3.0-convocacao)...",
             "Verificando memória... OK",
             "Montando sistema de arquivos criptografado... OK",
             "Iniciando serviços de rede furtiva...",
             "Conexão segura estabelecida com o servidor 'O Olho'.",
+            "ERRO CRÍTICO: Falha na integridade do núcleo de memória. Dados fragmentados.",
+            "ALERTA: Protocolo Fantasma ATIVO.",
             " ",
             "Bem-vindo ao Sombra OS, Agente.",
-            "Use 'ls' para ver os arquivos recuperados.",
-            "Digite 'help' para a lista de comandos.",
+            "Leia 'memoria_corrompida.log' para detalhes da missão.",
         ];
 
         function focusInput() {
@@ -375,6 +512,30 @@ FIM DA TRANSMISSÃO
             focusInput();
         }
 
+        function startAlerts() {
+            if (isProtocoloFantasmaActive) {
+                alertInterval = setInterval(async () => {
+                    if (!isProtocoloFantasmaActive) {
+                        clearInterval(alertInterval);
+                        return;
+                    }
+                    const isInputVisible = inputLine.style.display !== 'none';
+                    if (!isInputVisible) return; // Don't show alert if a command is running
+
+                    inputLine.style.display = 'none';
+                    
+                    const alertElement = document.createElement('p');
+                    alertElement.className = 'alert-text my-2';
+                    terminalOutput.appendChild(alertElement);
+                    await typeWriter(">> ALERTA: PROTOCOLO FANTASMA ATIVO. DIRETIVA PRIMÁRIA: SOBREVIVÊNCIA E PESQUISA. <<", alertElement, 30);
+                    
+                    terminal.scrollTop = terminal.scrollHeight;
+                    inputLine.style.display = 'flex';
+                    focusInput();
+                }, 60000); // 60 seconds
+            }
+        }
+
         inputField.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 handleCommand();
@@ -389,6 +550,7 @@ FIM DA TRANSMISSÃO
             }
             inputLine.style.display = 'flex';
             focusInput();
+            startAlerts();
         }
         
         async function initiateConnection() {
@@ -400,11 +562,11 @@ FIM DA TRANSMISSÃO
             
             terminalOutput.innerHTML = ''; 
             await Tone.start();
-
-            typeSound = new Tone.MembraneSynth({
-                pitchDecay: 0.008,
-                octaves: 2,
-                envelope: { attack: 0.001, decay: 0.1, sustain: 0.01, release: 0.01 },
+            
+            typeSound = new Tone.PolySynth(Tone.MembraneSynth, {
+                "pitchDecay": 0.008,
+                "octaves": 2,
+                "envelope": { "attack": 0.001, "decay": 0.1, "sustain": 0.01, "release": 0.01 },
             }).toDestination();
             typeSound.volume.value = -25;
 
