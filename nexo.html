@@ -87,12 +87,14 @@
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="./firebase-config.js"></script>
     <script>
       // Initialize Firebase
       const app = firebase.initializeApp(firebaseConfig);
       const database = firebase.database();
+      const auth = firebase.auth();
     </script>
 </head>
 <body class="min-h-screen p-4 sm:p-6 lg:p-8">
@@ -416,6 +418,15 @@
         }
 
         // --- INICIALIZAÇÃO ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                init();
+            } else {
+                // Redireciona para a página de login se não estiver logado
+                window.location.href = 'login.html';
+            }
+        });
+
         function init() {
             loadComodosState();
             
@@ -427,9 +438,6 @@
                 }
             });
         }
-
-        // Inicia o aplicativo quando o DOM estiver pronto
-        document.addEventListener('DOMContentLoaded', init);
 
     </script>
 </body>
